@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 63.1 (92452) - https://sketch.com -->
+    <title>info</title>
+    <desc>Created with Sketch.</desc>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="info">
+            <circle id="Oval" fill="#26BDFC" cx="32" cy="32" r="32"></circle>
+            <path d="M31.9999804,38 C30.106296,38 28.5542137,36.4760421 28.4929325,34.5564746 L28.0021421,19.1880782 C27.9289625,16.8973313 29.7401066,15 31.9999804,15 C34.2598542,15 36.0709983,16.8973313 35.9978603,19.1880782 L35.5070699,34.5564746 C35.4457471,36.4760421 33.8936648,38 31.9999804,38 Z M31.7974361,49 C29.7001692,49 28,47.2092257 28,44.9998792 C28,42.7908709 29.7001692,41 31.7974361,41 L32.202518,41 C34.2997849,41 36,42.7908709 36,44.9998792 C36,47.2092257 34.2997849,49 32.202518,49 L31.7974361,49 Z" id="Shape" fill="#FFFFFF" fill-rule="nonzero"></path>
+        </g>
+    </g>
+</svg>

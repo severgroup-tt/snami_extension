@@ -1,0 +1,406 @@
+@font-face {
+  font-family: 'Museo Sans';
+  src: url('./fonts/MuseoSansMedium.eot?#iefix') format('embedded-opentype'),
+    url('./fonts/MuseoSansMedium.woff') format('woff'),
+    url('./fonts/MuseoSansMedium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+body {
+  font-size: 15px;
+  font-family: 'Museo Sans', 'Times New Roman', Arial, Tahoma;
+  min-width: 300px;
+  min-height: 300px;
+}
+
+h1 {
+  font-size: 20px;
+  line-height: 24px;
+  padding-bottom: 20px;
+  color: #000;
+}
+
+h2 {
+  font-size: 16px;
+  line-height: 24px;
+  padding-bottom: 6px;
+  color: #000;
+}
+
+h3 {
+  font-size: 14px;
+  line-height: 20px;
+  padding-bottom: 30px;
+  color: #666666;
+}
+
+section {
+}
+
+section.auth {
+  width: 370px;
+  padding: 30px;
+}
+
+section.candidate {
+  width: 768px;
+  padding: 16px;
+  max-height: 900px;
+}
+
+section.info {
+  flex: 1;
+  min-height: 100%;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px;
+}
+
+.info-image {
+}
+
+.info-text {
+  margin-top: 24px;
+  font-size: 16px;
+  line-height: 20px;
+  color: #666;
+  text-align: center;
+}
+
+textarea:focus,
+input:focus,
+button:focus {
+  outline: none;
+}
+
+::placeholder,
+::-webkit-input-placeholder,
+:-ms-input-placeholder {
+  color: #666666;
+}
+
+.form-logo-container {
+  text-align: center;
+}
+
+.form-logo {
+  height: 24px;
+}
+
+.form-row {
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+}
+
+.form-item {
+  flex: 1;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.form-item-separator {
+  width: 16px;
+}
+
+.form-label {
+  font-size: 12px;
+  line-height: 15px;
+  color: #666;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.form-label.required::after {
+  display: inline-block;
+  content: '*';
+  color: #FF5A6E;
+}
+
+.form-link {
+  font-size: 12px;
+  line-height: 14px;
+  color: #666;
+  display: block;
+  margin-top: 32px;
+  color: #26bdfc;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.form-link:hover {
+  text-decoration: underline;
+}
+
+input.form-input {
+  background: #ffff;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  width: 100%;
+  font-size: 14px;
+  line-height: 18px;
+  color: #000;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  padding: 10px;
+}
+
+.form-radios {
+  height: 40px;
+}
+
+.form-radios label {
+  display: inline-block;
+  padding-right: 20px;
+  height: 30px;
+  padding-top: 10px;
+  font-size: 14px;
+  line-height: 18px;
+  color: #000;
+  cursor: pointer;
+  position: relative;
+}
+
+input[type='radio'] {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+input[type='radio'] ~ .checkmark {
+  display: inline-block;
+  margin-left: 16px;
+}
+
+input[type='radio'] ~ .checkmark:before {
+  display: block;
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  border: 1px solid #bababa;
+}
+
+input[type='radio']:checked ~ .checkmark:before {
+  border: 1px solid #26bdfc;
+}
+input[type='radio']:checked ~ .checkmark:after {
+  display: block;
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 15px;
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: #26bdfc;
+}
+
+select {
+  display: block;
+  position: relative;
+  padding: 0 10px;
+  width: 100%;
+  height: 40px;
+  box-sizing: border-box;
+  margin: 0;
+  font-size: 14px;
+  line-height: 18px;
+  color: #000;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  box-shadow: none;
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: #fff;
+  background-image: url('./images/select_arrow.svg');
+  background-repeat: no-repeat;
+  background-position: right 10px top 50%, 0 0;
+  background-size: 12px 6px;
+}
+
+select:hover {
+  cursor: pointer;
+}
+
+select:focus {
+  outline: none;
+}
+
+select::before {
+  content: '';
+  display: block;
+  width: 10px;
+  height: 5px;
+  position: absolute;
+  right: 15px;
+  top: 18px;
+  background-image: url('./images/select_arrow.svg');
+}
+
+.form-footer {
+  margin-top: 16px;
+  text-align: right;
+}
+
+.form-button {
+  font-size: 14px;
+  line-height: 20px;
+  color: #fff;
+  background-color: #26bdfc;
+  border-radius: 3px;
+  padding: 14px 20px;
+}
+
+.form-error {
+  display: inline-block;
+  position: relative;
+  font-size: 12px;
+  line-height: 12px;
+  color: #ff5a6e;
+  padding: 8px 0;
+  padding-left: 20px;
+}
+
+.form-error::before {
+  content: '';
+  display: block;
+  width: 14px;
+  height: 13px;
+  position: absolute;
+  top: 7px;
+  left: 0;
+  background-image: url('./images/warn.svg');
+}
+
+header {
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 8px;
+}
+
+.customer-container {
+  display: flex;
+  min-width: 256px;
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  border: 1px solid #eee;
+  border-radius: 6px;
+}
+
+.customers-separator {
+  width: 8px;
+}
+
+.customer-avatar {
+  width: 40px;
+  height: 40px;
+}
+
+.customer-info {
+  width: 0;
+  flex-grow: 1;
+  margin-left: 8px;
+}
+
+.customer-name,
+.customer-email {
+  font-size: 14px;
+  line-height: 18px;
+  color: #000;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.customer-exit-button {
+  display: flex;
+  height: 100%;
+  width: 32px;
+  align-items: center;
+  justify-content: center;
+}
+
+.customer-exit-button:hover {
+  cursor: pointer;
+}
+
+.customer-exit {
+  width: 24px;
+  height: 26px;
+}
+
+.loader-active {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #fffa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loader-inactive {
+  display: none;
+}
+
+.datepicker-dropdown .datepicker-picker {
+  box-shadow: 0px 4px 40px rgba(0, 0, 0, 0.18);
+  padding: 24px;
+}
+
+.datepicker-grid {
+  width: 216px;
+}
+.datepicker-header .datepicker-controls {
+  margin-bottom: 16px;
+}
+
+.datepicker-header .datepicker-controls .button {
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.datepicker-view .dow {
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.datepicker-cell,
+.datepicker-view .week {
+  height: 1.8rem;
+  line-height: 1.8rem;
+}
+
+.datepicker-view .days .datepicker-cell,
+.datepicker-view .dow {
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.datepicker-cell.selected,
+.datepicker-cell.selected:hover {
+  background-color: #26bdfc;
+}
+
+.datepicker-cell.today.focused:not(.selected) {
+  background-color: #3e4b5b;
+}
+
+.datepicker-cell.today:not(.selected) {
+  background-color: #3e4b5b;
+}

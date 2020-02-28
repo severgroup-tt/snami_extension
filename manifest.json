@@ -1,0 +1,32 @@
+{
+  "name": "Snami.work 💕Potok.io",
+  "version": "1.0",
+  "description": "Интеграция Snami.work в Potok.io",
+  "permissions": [
+    "activeTab",
+    "declarativeContent",
+    "storage",
+    "https://app.potok.io/*",
+    "https://snami-back.talenttechlab.org/*"
+  ],
+  "background": {
+    "scripts": ["src/scripts/background.js"],
+    "persistent": false
+  },
+  "browser_action": {
+    "default_popup": "src/popup.html",
+    "default_icon": {
+      "16": "src/images/logo_extension_check.png",
+      "32": "src/images/logo_extension_check@2x.png",
+      "48": "src/images/logo_extension_check@3x.png",
+      "128": "src/images/logo_extension_check@8x.png"
+    }
+  },
+  "icons": {
+    "16": "src/images/logo_extension.png",
+    "32": "src/images/logo_extension@2x.png",
+    "48": "src/images/logo_extension@3x.png",
+    "128": "src/images/logo_extension@8x.png"
+  },
+  "manifest_version": 2
+}
