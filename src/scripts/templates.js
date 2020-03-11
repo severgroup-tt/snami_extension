@@ -40,13 +40,13 @@ const getAuthForm = ({ formName, companyName, companyLogo } = {}) => {
         <div class="form-item">
           <label class="form-label" htmlFor="login">Логин</label>
           <input class="form-input" id="login" name="login" type="text" placeholder="Логин" value="${
-            formName == form_authSnami ? loginSnami : loginPotok
+            formName === form_authSnami ? loginSnami : loginPotok
           }" />
         </div>
         <div class="form-item">
           <label class="form-label" htmlFor="password">Пароль</label>
           <input class="form-input" id="password" name="password" type="password" placeholder="Пароль" value="${
-            formName == form_authSnami ? passwordSnami : passwordPotok
+            formName === form_authSnami ? passwordSnami : passwordPotok
           }" />
         </div>
         <div id="auth-error"></div>

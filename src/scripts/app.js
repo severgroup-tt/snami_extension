@@ -682,6 +682,7 @@ class App {
         let applicantId = '';
         // https://app.potok.io/jobs/189190/6167883
         // https://app.potok.io/jobs/189190/stage/1515235/6167883
+        // https://app.potok.io/jobs/189190/stage/all/?applicantId=6167883
         if (/app.potok.io\/jobs\/\d+\/\d+/.test(url)) {
           const ids = url.match(/\d+/g);
           jobId = ids[0];
@@ -691,6 +692,16 @@ class App {
           const ids = url.match(/\d+/g);
           jobId = ids[0];
           applicantId = ids[2];
+        }
+        if (/app.potok.io\/jobs\/\d+\S+applicantId=\d+/.test(url)) {
+          const jobStr = url.match(/jobs\/\d+/g)[0];
+          const applicantStr = url.match(/applicantId=\d+/g)[0];
+          if (jobStr) {
+            jobId = jobStr.match(/\d+/g)[0];
+          }
+          if (applicantStr) {
+            applicantId = applicantStr.match(/\d+/g)[0];
+          }
         }
         if (jobId && applicantId) {
           this._showLoader();
