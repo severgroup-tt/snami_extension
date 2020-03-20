@@ -9,8 +9,10 @@ if (
 ) {
   console = chrome.extension.getBackgroundPage().console;
 }
-const storage = chrome.storage.sync;
-// storage.clear();
+const storageSync = chrome.storage.sync;
+const storageLocal = chrome.storage.local;
+// storageSync.clear();
+// storageLocal.clear();
 
 const datePickerOptions = {
   // Whether or not to close the datepicker immediately when a date is selected.
@@ -37,6 +39,7 @@ const datePickerOptions = {
 
 class App {
   constructor() {
+    this.snamiStageServer = false;
     this.snamiHeaders = '';
     this.snamiCustomerName = '';
     this.snamiCustomerEmail = '';
@@ -55,6 +58,7 @@ class App {
     this.maskVacation = null;
     this.startedDatepicker = null;
     this.maskStartedTime = null;
+    this.keysPressed = [];
     this.headerContainer = document.getElementById('header');
     this.appContainer = document.getElementById('app');
     this.submitListener = document.addEventListener('submit', this._onSubmitForm);
@@ -62,7 +66,26 @@ class App {
     this.changeListener = document.addEventListener('change', this._onChangeElement);
     this.inputChangeListener = document.addEventListener('input', this._onInputElement);
     this.inputBlurListener = document.addEventListener('blur', this._onInputElement);
+    this.keyDownListener = document.addEventListener('keydown', this._onKey);
+    this.keyUpListener = document.addEventListener('keyup', this._onKey);
+    apiSnami.refreshToken = this._refreshSnamiToken;
     this._initApp();
+  }
+
+  _refreshSnamiToken = (resolve, reject) => {
+    return new Promise(() => {
+      requestSnamiTokenExchange().then(({ data, problem }) => {
+        if (data) {
+          this.snamiHeaders = data;
+          snamiSetAuthHeaders(data);
+          storageSync.set({ snamiHeaders: data }, () => {
+            resolve();
+          });
+        } else {
+          reject(problem);
+        }
+      });
+    });
   }
 
   _render = () => {
@@ -70,14 +93,28 @@ class App {
     this.headerContainer.innerHTML = template_header({
       snamiName: this.snamiCustomerName,
       snamiEmail: this.snamiCustomerEmail,
+      snamiStageServer: this.snamiStageServer,
       potokName: this.potokCustomerName,
       potokEmail: this.potokCustomerEmail,
     });
     if (!this.mainInfo) {
       if (!this.potokHeaders) {
-        this.appContainer.innerHTML = template_authPotok;
+        storageLocal.get(['authLogin', 'authPassword'], ({ authLogin = '', authPassword = '' }) => {
+          this.appContainer.innerHTML = template_authPotok({
+            login: authLogin,
+            password: authPassword,
+            otherCompanyExist: !!this.snamiHeaders,
+          });
+        });
       } else if (!this.snamiHeaders) {
-        this.appContainer.innerHTML = template_authSnami;
+        storageLocal.get(['authLogin', 'authPassword'], ({ authLogin = '', authPassword = '' }) => {
+          this.appContainer.innerHTML = template_authSnami({
+            login: authLogin,
+            password: authPassword,
+            otherCompanyExist: !!this.potokHeaders,
+            snamiStageServer: !!this.snamiStageServer,
+          });
+        });
       } else if (this.applicant && this.snamiLocationsList) {
         this.appContainer.innerHTML = template_candidateForm({
           ...this.applicant,
@@ -121,11 +158,13 @@ class App {
   };
 
   _initApp = () => {
-    storage.get(
-      ['snamiHeaders', 'potokHeaders'],
-      ({ snamiHeaders = null, potokHeaders = null }) => {
+    storageSync.get(
+      ['snamiHeaders', 'potokHeaders', 'snamiStageServer'],
+      ({ snamiHeaders = null, potokHeaders = null, snamiStageServer = false }) => {
         this.snamiHeaders = snamiHeaders;
+        this.snamiStageServer = snamiStageServer;
         this.potokHeaders = potokHeaders;
+        apiSnami.setBaseUrl(this.snamiStageServer ? BASE_URL_SNAMI_STAGE : BASE_URL_SNAMI_PROD);
         if (this.snamiHeaders && this.potokHeaders) {
           snamiSetAuthHeaders(this.snamiHeaders);
           potokSetAuthHeaders(this.potokHeaders);
@@ -134,10 +173,25 @@ class App {
             .then(() => {
               this._getApplicantContent()
                 .then(() => {
-                  // this._render();
                   this._getLocationsList()
                     .then(() => {
-                      this._render();
+                      if (this.applicant.locationId) {
+                        this._render();
+                        this._showLoader();
+                        this._getStaffList(this.applicant.locationId)
+                          .then(() => {
+                            this._hideLoader();
+                            this._render();
+                          })
+                          .catch(error => {
+                            this._hideLoader();
+                            this.mainInfo = error;
+                            this._render();
+                          });
+                      } else {
+                        // this._hideLoader();
+                        this._render();
+                      }
                     })
                     .catch(error => {
                       this.mainInfo = error;
@@ -194,10 +248,10 @@ class App {
           let login = '';
           let password = '';
           for (let key in elements) {
-            if (elements[key].name === 'login') {
+            if (elements[key].name === form_authLogin) {
               login = elements[key].value;
             }
-            if (elements[key].name === 'password') {
+            if (elements[key].name === form_authPassword) {
               password = elements[key].value;
             }
           }
@@ -206,8 +260,10 @@ class App {
             requestSnamiLogin(login, password).then(({ data, problem }) => {
               this._hideLoader();
               if (data) {
-                storage.set({ snamiHeaders: data }, () => {
-                  this._initApp();
+                storageSync.set({ snamiHeaders: data }, () => {
+                  storageLocal.set({ authLogin: '', authPassword: '' }, () => {
+                    this._initApp();
+                  });
                 });
               } else {
                 this._showAuthError(problem);
@@ -218,8 +274,10 @@ class App {
             requestPotokLogin(login, password).then(({ data, problem }) => {
               this._hideLoader();
               if (data) {
-                storage.set({ potokHeaders: data }, () => {
-                  this._initApp();
+                storageSync.set({ potokHeaders: data }, () => {
+                  storageLocal.set({ authLogin: '', authPassword: '' }, () => {
+                    this._initApp();
+                  });
                 });
               } else {
                 this._showAuthError(problem);
@@ -271,7 +329,7 @@ class App {
           );
           errors += this._validateFormItem(
             this.applicant.locationId,
-            form_selectIocationId,
+            form_selectLocationId,
             'Обязательное поле',
             this._validatorNoEmpty,
           );
@@ -303,50 +361,26 @@ class App {
           );
           this._hideFormItemError(form_submitCandidate);
           if (!errors) {
-            let staffId = undefined;
-            const phone = String(this.applicant.phone).slice(-10);
+            const phone = String(this.applicant.phone).match(/\d+/g)[0];
             this._showLoader();
-            this._checkCandidateExist({ phone })
-              .then(staffIdByPhone => {
-                this._checkCandidateExist({ potokId: this.applicant.applicantId })
-                  .then(staffIdByPotokId => {
-                    if (staffIdByPhone && staffIdByPotokId && staffIdByPhone !== staffIdByPotokId) {
-                      this._showFormItemError(
-                        form_submitCandidate,
-                        'Упс, пользователь с таким телефоном и/или potokId уже был добавлен в Snami.',
-                      );
-                    } else {
-                      staffId = staffIdByPhone || staffIdByPotokId;
-                      requestSnamiCreateCandidate(!staffId, {
-                        ...this.applicant,
-                        staffId,
-                        locationId: +this.applicant.locationId,
-                        hrId: +this.applicant.hrId,
-                        mentorId: +this.applicant.mentorId,
-                        salary: +this.applicant.salary,
-                        phone,
-                        birthday: this.birthdsayDatepicker.getDate('yyyy-mm-dd') || '',
-                        startedDate: this.startedDatepicker.getDate('yyyy-mm-dd') || '',
-                      }).then(({ problem }) => {
-                        this._hideLoader();
-                        if (problem) {
-                          this._showFormItemError(form_submitCandidate, problem);
-                        } else {
-                          this.mainInfo = 'Кандидат успешно добавлен в Snami';
-                          this._render();
-                        }
-                      });
-                    }
-                  })
-                  .catch(problem => {
-                    this._hideLoader();
-                    this._showFormItemError(form_submitCandidate, problem);
-                  });
-              })
-              .catch(problem => {
-                this._hideLoader();
+            requestSnamiCreateCandidate(!this.applicant.staffId, {
+              ...this.applicant,
+              locationId: +this.applicant.locationId,
+              hrId: +this.applicant.hrId,
+              mentorId: +this.applicant.mentorId,
+              salary: +this.applicant.salary,
+              phone,
+              birthday: this.birthdsayDatepicker.getDate('yyyy-mm-dd') || '',
+              startedDate: this.startedDatepicker.getDate('yyyy-mm-dd') || '',
+            }).then(({ problem }) => {
+              this._hideLoader();
+              if (problem) {
                 this._showFormItemError(form_submitCandidate, problem);
-              });
+              } else {
+                this.mainInfo = this.applicant.editMode ? 'Данные кандидата обновлены' : 'Кандидат успешно добавлен в Snami';
+                this._render();
+              }
+            });
           }
         }
         break;
@@ -365,12 +399,16 @@ class App {
     } = event;
     if (targetId === id_logoutSnami || parentId === id_logoutSnami) {
       this._logOutSnami().then(() => {
-        this._initApp();
+        storageLocal.set({ authLogin: '', authPassword: '' }, () => {
+          this._initApp();
+        });
       });
     }
     if (targetId === id_logoutPotok || parentId === id_logoutPotok) {
       this._logOutPotok().then(() => {
-        this._initApp();
+        storageLocal.set({ authLogin: '', authPassword: '' }, () => {
+          this._initApp();
+        });
       });
     }
     if (targetId === id_linkCheckpoints) {
@@ -473,6 +511,26 @@ class App {
     }
   };
 
+  _onKey = event => {
+    const { type, keyCode } = event;
+    this.keysPressed[keyCode] = type === 'keydown';
+
+    if (
+      this.keysPressed[83] &&
+      this.keysPressed[78] &&
+      this.keysPressed[65] &&
+      !this._isLoading()
+    ) {
+      if (!this.snamiHeaders && this.potokHeaders) {
+        storageSync.set({ snamiStageServer: !this.snamiStageServer }, () => {
+          this.snamiStageServer = !this.snamiStageServer;
+          apiSnami.setBaseUrl(this.snamiStageServer ? BASE_URL_SNAMI_STAGE : BASE_URL_SNAMI_PROD);
+          this._render();
+        });
+      }
+    }
+  };
+
   _validateFormItem = (value, itemId, errorText, validatorFunction, validatorRegExp) => {
     if (validatorFunction ? validatorFunction(value) : new RegExp(validatorRegExp).test(value)) {
       this._hideFormItemError(itemId);
@@ -526,7 +584,7 @@ class App {
 
   _logOutSnami = () => {
     return new Promise(resolve => {
-      storage.remove('snamiHeaders', () => {
+      storageSync.remove('snamiHeaders', () => {
         this.snamiHeaders = '';
         this.snamiCustomerName = '';
         this.snamiCustomerEmail = '';
@@ -537,7 +595,7 @@ class App {
 
   _logOutPotok = () => {
     return new Promise(resolve => {
-      storage.remove('potokHeaders', () => {
+      storageSync.remove('potokHeaders', () => {
         this.potokHeaders = '';
         this.potokCustomerName = '';
         this.potokCustomerEmail = '';
@@ -552,7 +610,7 @@ class App {
       detail,
     } = event;
     switch (name) {
-      case form_selectIocationId:
+      case form_selectLocationId:
         {
           if (value !== this.applicant.locationId) {
             this.applicant.locationId = value;
@@ -597,6 +655,12 @@ class App {
       case form_inputSex:
         this.applicant.sex = !!value;
         break;
+      case form_authLogin:
+        storageLocal.set({ authLogin: value }, () => {});
+        break;
+      case form_authPassword:
+        storageLocal.set({ authPassword: value }, () => {});
+        break;
 
       default:
         break;
@@ -610,6 +674,10 @@ class App {
 
   _hideLoader = () => {
     document.getElementById('loader').className = 'loader-inactive';
+  };
+
+  _isLoading = () => {
+    return document.getElementById('loader').className === 'loader-active';
   };
 
   _showAuthError = error => {
@@ -728,7 +796,7 @@ class App {
                 middleName,
                 sex: gender === 'male' ? true : gender === 'female' ? false : null,
                 birthday: formattedBirthday ? formattedBirthday : '',
-                email,
+                email: email ? email : '',
                 phone: validPhone,
                 locationId: '',
                 hrId: '',
@@ -740,35 +808,75 @@ class App {
                 startedDate: '',
                 startedTime: '',
               };
-
-              if (validPhone && validPhone.length === 10) {
-                this._checkCandidateExist({ phone: validPhone })
-                  .then(() => {
-                    this._checkCandidateExist({ potokId: +applicantId })
-                      .then(() => {
-                        this._hideLoader();
-                        resolve();
-                      })
-                      .catch(problem => {
-                        this._hideLoader();
-                        reject(problem);
-                      });
-                  })
-                  .catch(problem => {
-                    this._hideLoader();
-                    reject(problem);
-                  });
-              } else {
-                this._checkCandidateExist({ potokId: +applicantId })
-                  .then(() => {
-                    this._hideLoader();
-                    resolve();
-                  })
-                  .catch(problem => {
-                    this._hideLoader();
-                    reject(problem);
-                  });
-              }
+              this._checkCandidateExist({ potokId: +applicantId })
+                .then(staffByPotokId => {
+                  if (staffByPotokId && staffByPotokId.editMode) {
+                    let {
+                      id: staffId,
+                      first_name: staffFirstName,
+                      last_name: staffLastName,
+                      middle_name: staffMiddleName,
+                      phone: staffPhone,
+                      email: staffEmail,
+                      birthday: staffBirthday,
+                      sex = false,
+                      started: startedDate = '',
+                      started_time: startedTime = '',
+                      location_id: locationId = 0,
+                      hr_id: hrId = 0,
+                      mentor_id: mentorId = 0,
+                      position = '',
+                      meta: {
+                        salary = '',
+                        vacation_days: vacation = 0,
+                        conditions = '',
+                      } = {},
+                      editMode,
+                    } = staffByPotokId;
+                    if (staffBirthday) {
+                      staffBirthday = moment(staffBirthday, 'YYYY-MM-DD').format('DD.MM.YYYY');
+                    }
+                    if (startedDate) {
+                      startedDate = moment(startedDate, 'YYYY-MM-DD').format(
+                        'DD.MM.YYYY',
+                      );
+                    }
+                    this.applicant = {
+                      ...this.applicant,
+                      staffId,
+                      editMode,
+                      firstName: staffFirstName,
+                      lastName: staffLastName,
+                      middleName: staffMiddleName,
+                      sex,
+                      birthday: staffBirthday,
+                      email: staffEmail,
+                      phone: staffPhone,
+                      locationId,
+                      hrId,
+                      mentorId,
+                      position,
+                      salary,
+                      vacation,
+                      conditions,
+                      startedDate,
+                      startedTime,
+                    };
+                  } else {
+                    if (staffByPotokId && staffByPotokId.id) {
+                      this.applicant = {
+                        ...this.applicant,
+                        staffId: staffByPotokId.id,
+                      };
+                    }
+                  }
+                  this._hideLoader();
+                  resolve();
+                })
+                .catch(problem => {
+                  this._hideLoader();
+                  reject(problem);
+                });
             } else {
               this._hideLoader();
               reject(problem);
@@ -792,8 +900,12 @@ class App {
       requestSnamiCheckCandidateExist(requestData).then(({ data, problem }) => {
         if (data && data.state) {
           const { state, staff, customer } = data;
-          if (state === 'NEW' || state === 'FREE') {
-            resolve(staff && staff.id ? staff.id : undefined);
+          if (state === 'NEW' || state === 'FREE' || (state === 'BUSY' && !!customer?.is_own)) {
+            if (staff?.id) {
+              resolve({...staff, editMode: state === 'BUSY'});
+            } else {
+              resolve(undefined);
+            }
           } else {
             const name = `${staff?.last_name || ''} ${staff?.first_name ||
               ''} ${staff?.middle_name || ''}`;

@@ -24,14 +24,14 @@ h1 {
 h2 {
   font-size: 16px;
   line-height: 24px;
-  padding-bottom: 6px;
+  padding-bottom: 12px;
   color: #000;
 }
 
 h3 {
   font-size: 14px;
   line-height: 20px;
-  padding-bottom: 30px;
+  padding-bottom: 16px;
   color: #666666;
 }
 
@@ -44,9 +44,8 @@ section.auth {
 }
 
 section.candidate {
-  width: 768px;
+  width: 700px;
   padding: 16px;
-  max-height: 900px;
 }
 
 section.info {
@@ -59,6 +58,45 @@ section.info {
 }
 
 .info-image {
+}
+
+.check-icon {
+  display: inline-block;
+  position: relative;
+}
+
+.check-icon::before {
+  content: '';
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  position: absolute;
+  top: -17px;
+  left: 0;
+}
+
+.check-icon.blue::before {
+  background-color: #26BDFC;
+}
+
+.check-icon.green::before {
+  background-color: #00D358;
+}
+
+.check-icon::after {
+  content: '';
+  display: block;
+  width: 13px;
+  height: 9px;
+  position: absolute;
+  top: -12px;
+  left: 3px;
+  background-image: url('./images/check.svg');
+}
+
+.text-red {
+  color: #FF5A6E;
 }
 
 .info-text {

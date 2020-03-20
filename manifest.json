@@ -5,9 +5,7 @@
   "permissions": [
     "activeTab",
     "declarativeContent",
-    "storage",
-    "https://app.potok.io/*",
-    "https://snami-back.talenttechlab.org/*"
+    "storage"
   ],
   "background": {
     "scripts": ["src/scripts/background.js"],

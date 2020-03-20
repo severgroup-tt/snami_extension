@@ -1,8 +1,8 @@
 'use strict';
 
 const APP_NAME_SNAMI = 'Snami';
-const BASE_URL_SNAMI = 'https://snami-back.talenttechlab.org/';
-// const BASE_URL_SNAMI = 'https://snami-test-back.talenttechlab.org/';
+const BASE_URL_SNAMI_PROD = 'https://snami-back.talenttechlab.org/';
+const BASE_URL_SNAMI_STAGE = 'https://snami-test-back.talenttechlab.org/';
 const APP_NAME_POTOK = 'Potok';
 const BASE_URL_POTOK = 'https://app.potok.io/';
 
@@ -17,12 +17,18 @@ class Api {
     this.headers = { ...this.headers, ...headers };
   };
 
+  setBaseUrl = (url) => {
+    this.baseUrl = url;
+  };
+
+  refreshToken = null
+
   post = (url, data, config = {}) =>
     this._fetch(url, data ? JSON.stringify(data) : undefined, 'POST', config);
 
   get = (url, data, config = {}) => this._fetch(url, data, 'GET', config);
 
-  _fetch = (url, data, method, config = {}) => {
+  _fetch = (url, data, method, config = {}, retry = false, onRetryResolve) => {
     return new Promise((resolve, reject) => {
       const body = method === 'POST' ? { body: data } : {};
       let uriSuffix = '';
@@ -40,54 +46,79 @@ class Api {
       })
         .then(async response => {
           const { ok, status } = response;
-            console.log(
-              `${method}: ${this.baseUrl}${url}${uriSuffix ? `/${uriSuffix}` : ''}\n`,
-              ` response:`,
-              response,
-            );
+            // console.log(
+            //   `${method}: ${this.baseUrl}${url}${uriSuffix ? `/${uriSuffix}` : ''}\n`,
+            //   ` response:`,
+            //   response,
+            // );
+          
           if (ok) {
             const data = await response.json();
-            console.log(
-              `${method}: ${this.baseUrl}${url}${uriSuffix ? `/${uriSuffix}` : ''}\n`,
-              body,
-              ` resultData:`,
-              data,
-              ` status:`,
-              status,
-            );
-            resolve({ ok, data, headers: response.headers, status });
+            // console.log(
+            //   `${method}: ${this.baseUrl}${url}${uriSuffix ? `/${uriSuffix}` : ''}\n`,
+            //   body,
+            //   ` resultData:`,
+            //   data,
+            //   ` status:`,
+            //   status,
+            // );
+            if (retry && onRetryResolve) {
+              onRetryResolve({ ok, data, headers: response.headers, status });
+            } else {
+              resolve({ ok, data, headers: response.headers, status });
+            }
           } else {
             let problem;
-            try {
-              problem = await response.json();
-            } catch (error) {
-              problem = error;
+            if (status === 401 && this.refreshToken && !retry) {
+              return this.refreshToken(() => this._fetch(url, data, method, config, true, resolve, reject));
+            } else {
+              try {
+                problem = await response.json();
+              } catch (error) {
+                problem = error;
+              }
+              // console.log(
+              //   `${method}: ${this.baseUrl}${url}${uriSuffix ? `/${uriSuffix}` : ''}\n`,
+              //   body,
+              //   ` problem:`,
+              //   problem,
+              //   ` status:`,
+              //   status,
+              // );
+              const snamiError = problem && problem.error && problem.error.message;
+              const potokErrors =
+                problem && problem.errors && Object.values(problem.errors).join(', ');
+              if (retry && onRetryResolve) {
+                onRetryResolve({
+                  app: this.appName,
+                  ok,
+                  problem: snamiError || potokErrors || 'Что-то пошло не так',
+                  status,
+                });
+              } else {
+                resolve({
+                  app: this.appName,
+                  ok,
+                  problem: snamiError || potokErrors || 'Что-то пошло не так',
+                  status,
+                });
+              }
             }
-            console.log(
-              `${method}: ${this.baseUrl}${url}${uriSuffix ? `/${uriSuffix}` : ''}\n`,
-              body,
-              ` problem:`,
-              problem,
-              ` status:`,
-              status,
-            );
-            const snamiError = problem && problem.error && problem.error.message;
-            const potokErrors =
-              problem && problem.errors && Object.values(problem.errors).join(', ');
-            resolve({
-              app: this.appName,
-              ok,
-              problem: snamiError || potokErrors || 'Что-то пошло не так',
-              status,
-            });
           }
         })
-        .catch(problem => resolve({ ok: false, problem }));
+        .catch(problem => {
+          // console.log('error: ' + problem);
+          if (retry && onRetryResolve) {
+            onRetryResolve({ ok: false, problem });
+          } else {
+            resolve({ ok: false, problem });
+          }
+        });
     });
   };
 }
 
-const apiSnami = new Api(APP_NAME_SNAMI, BASE_URL_SNAMI, {
+const apiSnami = new Api(APP_NAME_SNAMI, BASE_URL_SNAMI_PROD, {
   Accept: 'application/json',
 });
 
@@ -150,6 +181,23 @@ const requestPotokLogin = (email, password) => {
           ...response,
           data: null,
           problem: problem || 'Не удалось получить токен',
+        });
+      }
+    });
+  });
+};
+
+const requestSnamiTokenExchange = token => {
+  return new Promise(resolve => {
+    apiSnami.post('token/exchange', { token: apiSnami.headers['X-Token'] }).then(response => {
+      const { ok, data, problem } = response;
+      if (ok && data && data.data && data.data.token) {
+        resolve({ ...response, data: { 'X-Token': data.data.token } });
+      } else {
+        resolve({
+          ...response,
+          data: null,
+          problem: problem || 'Не удалось получить токен сессии Snami',
         });
       }
     });
@@ -293,7 +341,6 @@ const requestSnamiCreateCandidate = (
       'meta',
       'middle_name',
       'phone',
-      'photo_base64',
       'position',
       'sex',
       'started',
@@ -337,9 +384,12 @@ const requestSnamiStaffList = ({ locationId = 0, isHR = false, isMentor = false 
   return new Promise(resolve => {
     apiSnami
       .post('customer/staff/list', {
-        is_hr: isHR ? 'true' : 'none',
-        is_mentor: isMentor ? 'true' : 'none',
-        location_id: locationId,
+        filter: {
+          is_hr: isHR ? 'true' : 'none',
+          is_mentor: isMentor ? 'true' : 'none',
+          location_id: locationId,
+        },
+        page_size: 300,
       })
       .then(response => {
         const { ok, data, problem } = response;

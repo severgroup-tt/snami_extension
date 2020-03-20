@@ -2,6 +2,8 @@
 
 const form_authSnami = 'auth_snami';
 const form_authPotok = 'auth_potok';
+const form_authLogin = 'input_login';
+const form_authPassword = 'input_password';
 const form_candidate = 'candidate_create';
 const id_logoutSnami = 'logout_snami';
 const id_logoutPotok = 'logout_potok';
@@ -13,7 +15,7 @@ const form_inputBirthday = 'input_birthday';
 const form_inputSex = 'input_sex';
 const form_inputPhone = 'input_phone';
 const form_inputEmail = 'input_email';
-const form_selectIocationId = 'input_locationId';
+const form_selectLocationId = 'input_locationId';
 const form_selectHrId = 'select_hrId';
 const form_selectMentorId = 'select_mentorId';
 const form_inputPosition = 'input_position';
@@ -23,31 +25,29 @@ const form_inputConditions = 'input_conditions';
 const form_inputStartedTime = 'input_startedTime';
 const form_inputStartedDate = 'input_startedDate';
 const form_submitCandidate = 'form_submitCandidate';
-const loginSnami = '';
-const passwordSnami = '';
-const loginPotok = '';
-const passwordPotok = '';
 
-const getAuthForm = ({ formName, companyName, companyLogo } = {}) => {
+const getAuthForm = ({
+  formName,
+  companyName,
+  companyExist,
+  login = '',
+  password = '',
+  snamiStageServer,
+} = {}) => {
   return `
     <section class="auth">
       <h1>Вход</h1>
       <h3>Для адаптации сотрудников необходимо войти в приложения Potok и Snami</h3>
-      <div class="form-logo-container">
-        <img src="${companyLogo}" alt="${companyName}" class="form-logo"/>
-      </div>
+      ${companyExist ? `<h2>Вы успешно авторизованы в ${companyExist} <span class="check-icon blue"></span></h2>` : ''}
+      <h2>Выполните вход в ${companyName}${snamiStageServer ? '&nbsp;&nbsp;&nbsp;<span class="text-red">[STAGE]</span>' : ''}</h2>
       <form name="${formName}">
         <div class="form-item">
-          <label class="form-label" htmlFor="login">Логин</label>
-          <input class="form-input" id="login" name="login" type="text" placeholder="Логин" value="${
-            formName === form_authSnami ? loginSnami : loginPotok
-          }" />
+          <label class="form-label" htmlFor="${form_authLogin}">Логин</label>
+          <input class="form-input" id="${form_authLogin}" name="${form_authLogin}" type="text" placeholder="Логин" value="${login}" />
         </div>
         <div class="form-item">
-          <label class="form-label" htmlFor="password">Пароль</label>
-          <input class="form-input" id="password" name="password" type="password" placeholder="Пароль" value="${
-            formName === form_authSnami ? passwordSnami : passwordPotok
-          }" />
+          <label class="form-label" htmlFor="${form_authPassword}">Пароль</label>
+          <input class="form-input" id="${form_authPassword}" name="${form_authPassword}" type="password" placeholder="Пароль" value="${password}" />
         </div>
         <div id="auth-error"></div>
         <div class="form-footer">
@@ -60,16 +60,24 @@ const getAuthForm = ({ formName, companyName, companyLogo } = {}) => {
   `;
 };
 
-const template_authSnami = getAuthForm({
-  formName: form_authSnami,
-  companyName: 'Snami',
-  companyLogo: './images/logo_snami.svg',
-});
-const template_authPotok = getAuthForm({
-  formName: form_authPotok,
-  companyName: 'Potok',
-  companyLogo: './images/logo_potok.svg',
-});
+const template_authSnami = ({ login, password, otherCompanyExist, snamiStageServer }) =>
+  getAuthForm({
+    login: login ? login : '',
+    password: password ? password : '',
+    formName: form_authSnami,
+    companyName: 'Snami',
+    companyExist: otherCompanyExist ? 'Potok' : null,
+    snamiStageServer: !!snamiStageServer,
+  });
+
+const template_authPotok = ({ login, password, otherCompanyExist }) =>
+  getAuthForm({
+    login: login ? login : '',
+    password: password ? password : '',
+    formName: form_authPotok,
+    companyName: 'Potok',
+    companyExist: otherCompanyExist ? 'Snami' : null,
+  });
 
 const getCustomerBox = ({ avatar, name, email, logoutId }) => {
   return `
@@ -86,17 +94,23 @@ const getCustomerBox = ({ avatar, name, email, logoutId }) => {
   `;
 };
 
-const template_header = ({ snamiName, snamiEmail, potokName, potokEmail } = {}) => {
+const template_header = ({
+  snamiName,
+  snamiEmail,
+  potokName,
+  potokEmail,
+  snamiStageServer,
+} = {}) => {
   if ((snamiName && snamiEmail) || (potokName && potokEmail)) {
     return `
     <header>
       ${
-        snamiName && snamiEmail
+        potokName && potokEmail
           ? getCustomerBox({
-              avatar: './images/avatar_snami.svg',
-              name: snamiName,
-              email: snamiEmail,
-              logoutId: id_logoutSnami,
+              avatar: './images/avatar_potok.svg',
+              name: potokName,
+              email: potokEmail,
+              logoutId: id_logoutPotok,
             })
           : ''
       }
@@ -106,12 +120,14 @@ const template_header = ({ snamiName, snamiEmail, potokName, potokEmail } = {}) 
           : ''
       }
       ${
-        potokName && potokEmail
+        snamiName && snamiEmail
           ? getCustomerBox({
-              avatar: './images/avatar_potok.svg',
-              name: potokName,
-              email: potokEmail,
-              logoutId: id_logoutPotok,
+              avatar: snamiStageServer
+                ? './images/avatar_snami_stage.svg'
+                : './images/avatar_snami.svg',
+              name: snamiName,
+              email: snamiEmail,
+              logoutId: id_logoutSnami,
             })
           : ''
       }
@@ -123,6 +139,7 @@ const template_header = ({ snamiName, snamiEmail, potokName, potokEmail } = {}) 
 };
 
 const template_candidateForm = ({
+  editMode = false,
   firstName = '',
   lastName = '',
   middleName = '',
@@ -145,7 +162,12 @@ const template_candidateForm = ({
 }) => {
   return `
     <section class="candidate">
-      <h1>Приглашение на адаптацию в Snami для сотрудника</h1>
+      <h1>${
+        editMode
+          ? 'Сотрудник уже проходит адаптацию <span class="check-icon green"></span>'
+          : 'Приглашение на адаптацию в Snami для сотрудника'
+      }</h1>
+      ${editMode ? '<h3>Вы можете редактировать данные профиля сотрудника</h3>' : ''}
       <form name="${form_candidate}">
         <div class="form-row">
           <div class="form-item">
@@ -199,8 +221,8 @@ const template_candidateForm = ({
         </div>
         <div class="form-row">
           <div class="form-item">
-            <label class="form-label required" htmlFor="${form_selectIocationId}">Локация</label>
-            <select name="${form_selectIocationId}" id="${form_selectIocationId}">
+            <label class="form-label required" htmlFor="${form_selectLocationId}">Локация</label>
+            <select name="${form_selectLocationId}" id="${form_selectLocationId}">
               <option value="">Выберите локацию</option>
               ${locations
                 .map(
@@ -211,7 +233,7 @@ const template_candidateForm = ({
                 )
                 .join()}
             </select>
-            <div id="${form_selectIocationId}_error"></div>
+            <div id="${form_selectLocationId}_error"></div>
           </div>
           <div class="form-item-separator"></div>
           <div class="form-item">
@@ -290,7 +312,7 @@ const template_candidateForm = ({
         <div class="form-footer">
           <div id="${form_submitCandidate}_error"></div>
           <button type="submit" class="form-button">
-            Отправить приглашение
+            ${editMode ? 'Сохранить изменениия' : 'Отправить приглашение'}
           </button>
         </div>
       </form>
