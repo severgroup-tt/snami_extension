@@ -557,7 +557,7 @@ class App {
   };
 
   _validatorPhone = value => {
-    if (
+    if (value &&
       String(value)
         .match(/\d+/g)
         .join('').length === 11
