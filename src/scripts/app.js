@@ -363,24 +363,58 @@ class App {
           if (!errors) {
             const phone = String(this.applicant.phone).match(/\d+/g)[0];
             this._showLoader();
-            requestSnamiCreateCandidate(!this.applicant.staffId, {
-              ...this.applicant,
-              locationId: +this.applicant.locationId,
-              hrId: +this.applicant.hrId,
-              mentorId: +this.applicant.mentorId,
-              salary: +this.applicant.salary,
-              phone,
-              birthday: this.birthdsayDatepicker.getDate('yyyy-mm-dd') || '',
-              startedDate: this.startedDatepicker.getDate('yyyy-mm-dd') || '',
-            }).then(({ problem }) => {
-              this._hideLoader();
-              if (problem) {
-                this._showFormItemError(form_submitCandidate, problem);
-              } else {
-                this.mainInfo = this.applicant.editMode ? 'Данные кандидата обновлены' : 'Кандидат успешно добавлен в Snami';
-                this._render();
-              }
-            });
+            if (!this.applicant.staffId) {
+              this._checkCandidateExist({ phone })
+                .then(staffByPhone => {
+                  if (staffByPhone && staffByPhone.id && staffByPhone.isFree) {
+                    this.applicant.staffId = staffByPhone.id;
+                  }
+                  requestSnamiCreateCandidate(!this.applicant.staffId, {
+                    ...this.applicant,
+                    locationId: +this.applicant.locationId,
+                    hrId: +this.applicant.hrId,
+                    mentorId: +this.applicant.mentorId,
+                    salary: +this.applicant.salary,
+                    phone,
+                    birthday: this.birthdsayDatepicker.getDate('yyyy-mm-dd') || '',
+                    startedDate: this.startedDatepicker.getDate('yyyy-mm-dd') || '',
+                  }).then(({ problem }) => {
+                    this._hideLoader();
+                    if (problem) {
+                      this._showFormItemError(form_submitCandidate, problem);
+                    } else {
+                      this.mainInfo = this.applicant.editMode
+                        ? 'Данные кандидата обновлены'
+                        : 'Кандидат успешно добавлен в Snami';
+                      this._render();
+                    }
+                  });
+                }).catch(problem => {
+                  this._hideLoader();
+                  this._showFormItemError(form_submitCandidate, problem);
+                });
+            } else {
+              requestSnamiCreateCandidate(!this.applicant.staffId, {
+                ...this.applicant,
+                locationId: +this.applicant.locationId,
+                hrId: +this.applicant.hrId,
+                mentorId: +this.applicant.mentorId,
+                salary: +this.applicant.salary,
+                phone,
+                birthday: this.birthdsayDatepicker.getDate('yyyy-mm-dd') || '',
+                startedDate: this.startedDatepicker.getDate('yyyy-mm-dd') || '',
+              }).then(({ problem }) => {
+                this._hideLoader();
+                if (problem) {
+                  this._showFormItemError(form_submitCandidate, problem);
+                } else {
+                  this.mainInfo = this.applicant.editMode
+                    ? 'Данные кандидата обновлены'
+                    : 'Кандидат успешно добавлен в Snami';
+                  this._render();
+                }
+              });
+            }
           }
         }
         break;
@@ -443,7 +477,7 @@ class App {
         this.applicant.middleName = value;
         break;
       case form_inputBirthday:
-        this.applicant.middleName = value;
+        this.applicant.birthday = value;
         this._validateFormItem(
           value,
           form_inputBirthday,
@@ -748,9 +782,14 @@ class App {
         const { url } = tab;
         let jobId = '';
         let applicantId = '';
+        // https://app.potok.io/applicants/6755512/
         // https://app.potok.io/jobs/189190/6167883
         // https://app.potok.io/jobs/189190/stage/1515235/6167883
         // https://app.potok.io/jobs/189190/stage/all/?applicantId=6167883
+        if (/app.potok.io\/applicants\/\d+/.test(url)) {
+          const ids = url.match(/\d+/g);
+          applicantId = ids[0];
+        }
         if (/app.potok.io\/jobs\/\d+\/\d+/.test(url)) {
           const ids = url.match(/\d+/g);
           jobId = ids[0];
@@ -771,7 +810,7 @@ class App {
             applicantId = applicantStr.match(/\d+/g)[0];
           }
         }
-        if (jobId && applicantId) {
+        if (applicantId || jobId && applicantId) {
           this._showLoader();
           requestPotokApplicantInfo({ jobId, applicantId }).then(({ data, problem }) => {
             if (data) {
@@ -826,20 +865,14 @@ class App {
                       hr_id: hrId = 0,
                       mentor_id: mentorId = 0,
                       position = '',
-                      meta: {
-                        salary = '',
-                        vacation_days: vacation = 0,
-                        conditions = '',
-                      } = {},
+                      meta: { salary = '', vacation_days: vacation = 0, conditions = '' } = {},
                       editMode,
                     } = staffByPotokId;
                     if (staffBirthday) {
                       staffBirthday = moment(staffBirthday, 'YYYY-MM-DD').format('DD.MM.YYYY');
                     }
                     if (startedDate) {
-                      startedDate = moment(startedDate, 'YYYY-MM-DD').format(
-                        'DD.MM.YYYY',
-                      );
+                      startedDate = moment(startedDate, 'YYYY-MM-DD').format('DD.MM.YYYY');
                     }
                     this.applicant = {
                       ...this.applicant,
@@ -902,7 +935,11 @@ class App {
           const { state, staff, customer } = data;
           if (state === 'NEW' || state === 'FREE' || (state === 'BUSY' && !!customer?.is_own)) {
             if (staff?.id) {
-              resolve({...staff, editMode: state === 'BUSY'});
+              resolve({
+                ...staff,
+                editMode: state === 'BUSY',
+                isFree: state === 'NEW' || state === 'FREE',
+              });
             } else {
               resolve(undefined);
             }

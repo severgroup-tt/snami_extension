@@ -244,18 +244,20 @@ const requestPotokCustomerInfo = () => {
 
 const requestPotokApplicantInfo = ({ jobId, applicantId }) => {
   return new Promise(resolve => {
-    apiPotok.get(`jobs/${jobId}/${applicantId}.json`).then(response => {
-      const { ok, data, problem } = response;
-      if (ok && data && data.applicant) {
-        resolve({ ...response, data: data.applicant });
-      } else {
-        resolve({
-          ...response,
-          data: null,
-          problem: problem || 'Не удалось получить информацию о кандидате.',
-        });
-      }
-    });
+    apiPotok
+      .get(jobId ? `jobs/${jobId}/${applicantId}.json` : `applicants/${applicantId}.json`)
+      .then(response => {
+        const { ok, data, problem } = response;
+        if (ok && data && data.applicant) {
+          resolve({ ...response, data: data.applicant });
+        } else {
+          resolve({
+            ...response,
+            data: null,
+            problem: problem || 'Не удалось получить информацию о кандидате.',
+          });
+        }
+      });
   });
 };
 
@@ -349,14 +351,18 @@ const requestSnamiCreateCandidate = (
   }
   return new Promise(resolve => {
     apiSnami.post(`customer/staff/${createNew ? 'create' : 'update'}`, request).then(response => {
-      const { ok, data, problem } = response;
+      const { ok, data, problem, status } = response;
       if (ok) {
         resolve({ ...response });
       } else {
         resolve({
           ...response,
           data: null,
-          problem: problem || data?.error?.message || 'Не удалось добавить кандидата.',
+          problem:
+            (status === 409 && 'Телефон и/или e-mail уже были использованы при добавлении кандидата в Snami.') ||
+            problem ||
+            data?.error?.message ||
+            'Не удалось добавить кандидата.',
         });
       }
     });
