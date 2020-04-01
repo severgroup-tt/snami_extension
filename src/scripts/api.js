@@ -17,11 +17,11 @@ class Api {
     this.headers = { ...this.headers, ...headers };
   };
 
-  setBaseUrl = (url) => {
+  setBaseUrl = url => {
     this.baseUrl = url;
   };
 
-  refreshToken = null
+  refreshToken = null;
 
   post = (url, data, config = {}) =>
     this._fetch(url, data ? JSON.stringify(data) : undefined, 'POST', config);
@@ -46,12 +46,12 @@ class Api {
       })
         .then(async response => {
           const { ok, status } = response;
-            // console.log(
-            //   `${method}: ${this.baseUrl}${url}${uriSuffix ? `/${uriSuffix}` : ''}\n`,
-            //   ` response:`,
-            //   response,
-            // );
-          
+          // console.log(
+          //   `${method}: ${this.baseUrl}${url}${uriSuffix ? `/${uriSuffix}` : ''}\n`,
+          //   ` response:`,
+          //   response,
+          // );
+
           if (ok) {
             const data = await response.json();
             // console.log(
@@ -70,7 +70,9 @@ class Api {
           } else {
             let problem;
             if (status === 401 && this.refreshToken && !retry) {
-              return this.refreshToken(() => this._fetch(url, data, method, config, true, resolve, reject));
+              return this.refreshToken(() =>
+                this._fetch(url, data, method, config, true, resolve, reject),
+              );
             } else {
               try {
                 problem = await response.json();
@@ -85,7 +87,21 @@ class Api {
               //   ` status:`,
               //   status,
               // );
-              const snamiError = problem && problem.error && problem.error.message;
+              let snamiError = problem && problem.error && problem.error.message;
+              try {
+                if (
+                  problem &&
+                  problem.error &&
+                  problem.error.data &&
+                  Array.isArray(problem.error.data)
+                ) {
+                  snamiError =
+                    snamiError +
+                    problem.error.data
+                      .map(({ key, value }) => (key && value ? `${key}: ${value}` : ''))
+                      .join(', ');
+                }
+              } catch {}
               const potokErrors =
                 problem && problem.errors && Object.values(problem.errors).join(', ');
               if (retry && onRetryResolve) {
@@ -359,7 +375,8 @@ const requestSnamiCreateCandidate = (
           ...response,
           data: null,
           problem:
-            (status === 409 && 'Телефон и/или e-mail уже были использованы при добавлении кандидата в Snami.') ||
+            (status === 409 &&
+              'Телефон и/или e-mail уже были использованы при добавлении кандидата в Snami.') ||
             problem ||
             data?.error?.message ||
             'Не удалось добавить кандидата.',
