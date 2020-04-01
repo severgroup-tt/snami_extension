@@ -136,8 +136,28 @@ class App {
           min: 0,
           max: 999,
         });
+        const timeFormat = 'HH:mm';
         this.maskStartedTime = IMask(document.getElementById(form_inputStartedTime), {
-          mask: '00:00',
+          mask: Date,
+          pattern: timeFormat,
+          format: function(date) {
+            return moment(date).format(timeFormat);
+          },
+          parse: function(str) {
+            return moment(str, timeFormat);
+          },
+          blocks: {
+            HH: {
+              mask: IMask.MaskedRange,
+              from: 0,
+              to: 23,
+            },
+            mm: {
+              mask: IMask.MaskedRange,
+              from: 0,
+              to: 59,
+            },
+          },
         });
         this.birthdsayDatepicker = new Datepicker(
           document.getElementById(form_inputBirthday),
@@ -822,12 +842,15 @@ class App {
                 born: birthday = '',
                 email = '',
                 phone = '',
+                planned_employment_date: startedDate = '',
               } = data;
               const validPhone = phone ? `7${String(phone).slice(-10)}` : '';
               const formattedBirthday =
                 birthday &&
-                moment(birthday, 'YYYY-MM-DD').format('DD.MM.YYYY') &&
                 moment(birthday, 'YYYY-MM-DD').format('DD.MM.YYYY');
+              const formattedStartedDate =
+                startedDate &&
+                moment(startedDate, 'YYYY-MM-DD').format('DD.MM.YYYY');
               this.applicant = {
                 applicantId: +applicantId,
                 firstName,
@@ -844,7 +867,7 @@ class App {
                 salary: '',
                 vacation: '',
                 conditions: '',
-                startedDate: '',
+                startedDate: formattedStartedDate ? formattedStartedDate : '',
                 startedTime: '',
               };
               this._checkCandidateExist({ potokId: +applicantId })
