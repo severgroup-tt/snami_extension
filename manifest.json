@@ -7,7 +7,7 @@
     "declarativeContent",
     "storage",
     "https://app.potok.io/*",
-    "https://snami-back.talenttechlab.org/*",
+    "https://api.snami.work/*",
     "https://snami-test-back.talenttechlab.org/*"
   ],
   "background": {
