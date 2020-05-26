@@ -57,7 +57,18 @@ section.info {
   padding: 40px;
 }
 
+section.info.small {
+  padding: 0;
+}
+
 .info-image {
+  width: 64px;
+  height: 64px;
+}
+
+section.info.small > .info-image {
+  width: 48px;
+  height: 48px;
 }
 
 .check-icon {
@@ -105,6 +116,11 @@ section.info {
   line-height: 20px;
   color: #666;
   text-align: center;
+}
+
+section.info.small > .info-text {
+  margin-top: 16px;
+  text-align: left;
 }
 
 textarea:focus,

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="66px" height="66px" viewBox="0 0 66 66" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <title>avatar_snami_stage</title>
+    <title>avatar_snami_rc</title>
     <defs>
         <circle id="path-1" cx="32" cy="32" r="32"></circle>
     </defs>
     <g id="logos" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <g transform="translate(-89.000000, -292.000000)" id="avatar_snami_stage">
-            <g transform="translate(90.000000, 293.000000)">
+        <g transform="translate(-168.000000, -292.000000)" id="avatar_snami_rc">
+            <g transform="translate(169.000000, 293.000000)">
                 <circle id="Oval" stroke="#DDDDDD" fill="#FFFFFF" cx="32" cy="32" r="32"></circle>
                 <g id="Group-3">
                     <mask id="mask-2" fill="white">
@@ -14,8 +14,8 @@
                     </mask>
                     <use id="Oval" stroke="#DDDDDD" xlink:href="#path-1"></use>
                     <rect id="Rectangle" fill="#FF5A6E" mask="url(#mask-2)" x="0" y="44" width="64" height="20"></rect>
-                    <text id="STAGE" fill="#FFFFFF" fill-rule="nonzero" mask="url(#mask-2)" font-family="GothamPro-Bold, Gotham Pro" font-size="12" font-weight="bold">
-                        <tspan x="10" y="55">STAGE</tspan>
+                    <text id="RC" fill="#FFFFFF" fill-rule="nonzero" mask="url(#mask-2)" font-family="GothamPro-Bold, Gotham Pro" font-size="12" font-weight="bold">
+                        <tspan x="23" y="55">RC</tspan>
                     </text>
                 </g>
                 <g id="snami_blue" transform="translate(4.000000, 28.000000)" fill="#0433FF">

@@ -9,10 +9,6 @@ if (
 ) {
   console = chrome.extension.getBackgroundPage().console;
 }
-const storageSync = chrome.storage.sync;
-const storageLocal = chrome.storage.local;
-// storageSync.clear();
-// storageLocal.clear();
 
 const datePickerOptions = {
   // Whether or not to close the datepicker immediately when a date is selected.
@@ -39,7 +35,7 @@ const datePickerOptions = {
 
 class App {
   constructor() {
-    this.snamiStageServer = false;
+    this.snamiServerType = 0;
     this.snamiHeaders = '';
     this.snamiCustomerName = '';
     this.snamiCustomerEmail = '';
@@ -82,18 +78,18 @@ class App {
             resolve();
           });
         } else {
-          reject(problem);
+          reject?.(problem);
         }
       });
     });
-  }
+  };
 
   _render = () => {
     this._hideLoader();
     this.headerContainer.innerHTML = template_header({
       snamiName: this.snamiCustomerName,
       snamiEmail: this.snamiCustomerEmail,
-      snamiStageServer: this.snamiStageServer,
+      snamiServerType: this.snamiServerType,
       potokName: this.potokCustomerName,
       potokEmail: this.potokCustomerEmail,
     });
@@ -107,14 +103,18 @@ class App {
           });
         });
       } else if (!this.snamiHeaders) {
-        storageLocal.get(['authLogin', 'authPassword'], ({ authLogin = '', authPassword = '' }) => {
-          this.appContainer.innerHTML = template_authSnami({
-            login: authLogin,
-            password: authPassword,
-            otherCompanyExist: !!this.potokHeaders,
-            snamiStageServer: !!this.snamiStageServer,
-          });
-        });
+        storageLocal.get(
+          ['authLogin', 'authPassword', 'snamiTwoFactorAuth'],
+          ({ authLogin = '', authPassword = '', snamiTwoFactorAuth = false }) => {
+            this.appContainer.innerHTML = template_authSnami({
+              login: authLogin,
+              password: authPassword,
+              otherCompanyExist: !!this.potokHeaders,
+              snamiServerType: this.snamiServerType,
+              snamiTwoFactorAuth: snamiTwoFactorAuth,
+            });
+          },
+        );
       } else if (this.applicant && this.snamiLocationsList) {
         this.appContainer.innerHTML = template_candidateForm({
           ...this.applicant,
@@ -179,12 +179,18 @@ class App {
 
   _initApp = () => {
     storageSync.get(
-      ['snamiHeaders', 'potokHeaders', 'snamiStageServer'],
-      ({ snamiHeaders = null, potokHeaders = null, snamiStageServer = false }) => {
+      ['snamiHeaders', 'potokHeaders', 'snamiServerType'],
+      ({ snamiHeaders = null, potokHeaders = null, snamiServerType = 0 }) => {
         this.snamiHeaders = snamiHeaders;
-        this.snamiStageServer = snamiStageServer;
+        this.snamiServerType = snamiServerType;
         this.potokHeaders = potokHeaders;
-        apiSnami.setBaseUrl(this.snamiStageServer ? BASE_URL_SNAMI_STAGE : BASE_URL_SNAMI_PROD);
+        apiSnami.setBaseUrl(
+          this.snamiServerType
+            ? this.snamiServerType === 1
+              ? BASE_URL_SNAMI_STAGE
+              : BASE_URL_SNAMI_RC
+            : BASE_URL_SNAMI_PROD,
+        );
         if (this.snamiHeaders && this.potokHeaders) {
           snamiSetAuthHeaders(this.snamiHeaders);
           potokSetAuthHeaders(this.potokHeaders);
@@ -259,7 +265,7 @@ class App {
   _onSubmitForm = event => {
     event.preventDefault();
     const {
-      target: { name, elements },
+      target: { id, name, elements },
     } = event;
     switch (name) {
       case form_authSnami:
@@ -279,11 +285,18 @@ class App {
           if (name === form_authSnami) {
             requestSnamiLogin(login, password).then(({ data, problem }) => {
               this._hideLoader();
-              if (data) {
-                storageSync.set({ snamiHeaders: data }, () => {
-                  storageLocal.set({ authLogin: '', authPassword: '' }, () => {
-                    this._initApp();
-                  });
+              if (data?.headers) {
+                storageSync.set({ snamiHeaders: data.headers }, () => {
+                  storageLocal.set(
+                    { authLogin: '', authPassword: '', snamiTwoFactorAuth: false },
+                    () => {
+                      this._initApp();
+                    },
+                  );
+                });
+              } else if (data?.twoFactor) {
+                storageLocal.set({ snamiTwoFactorAuth: true }, () => {
+                  this._initApp();
                 });
               } else {
                 this._showAuthError(problem);
@@ -409,7 +422,8 @@ class App {
                       this._render();
                     }
                   });
-                }).catch(problem => {
+                })
+                .catch(problem => {
                   this._hideLoader();
                   this._showFormItemError(form_submitCandidate, problem);
                 });
@@ -445,16 +459,13 @@ class App {
   };
 
   _onClickElement = event => {
-    const {
-      target: {
-        id: targetId,
-        parentElement: { id: parentId },
-      },
-    } = event;
+    const { target: { id: targetId, parentElement: { id: parentId } = {} } = {} } = event;
     if (targetId === id_logoutSnami || parentId === id_logoutSnami) {
       this._logOutSnami().then(() => {
         storageLocal.set({ authLogin: '', authPassword: '' }, () => {
-          this._initApp();
+          storageLocal.set({ authLogin: '', authPassword: '', snamiTwoFactorAuth: false }, () => {
+            this._initApp();
+          });
         });
       });
     }
@@ -466,7 +477,18 @@ class App {
       });
     }
     if (targetId === id_linkCheckpoints) {
-      window.open('https://snami.talenttechlab.org/report/meeting', '_blank');
+      window.open(
+        `${
+          FRONT_URL_SNAMI[
+            this.snamiServerType
+              ? this.snamiServerType === 1
+                ? BASE_URL_SNAMI_STAGE
+                : BASE_URL_SNAMI_RC
+              : BASE_URL_SNAMI_PROD
+          ]
+        }report/meeting`,
+        '_blank',
+      );
     }
   };
 
@@ -576,9 +598,16 @@ class App {
       !this._isLoading()
     ) {
       if (!this.snamiHeaders && this.potokHeaders) {
-        storageSync.set({ snamiStageServer: !this.snamiStageServer }, () => {
-          this.snamiStageServer = !this.snamiStageServer;
-          apiSnami.setBaseUrl(this.snamiStageServer ? BASE_URL_SNAMI_STAGE : BASE_URL_SNAMI_PROD);
+        const snamiServerType = this.snamiServerType ? (this.snamiServerType === 1 ? 2 : 0) : 1;
+        storageSync.set({ snamiServerType }, () => {
+          this.snamiServerType = snamiServerType;
+          apiSnami.setBaseUrl(
+            snamiServerType
+              ? snamiServerType === 1
+                ? BASE_URL_SNAMI_STAGE
+                : BASE_URL_SNAMI_RC
+              : BASE_URL_SNAMI_PROD,
+          );
           this._render();
         });
       }
@@ -611,7 +640,8 @@ class App {
   };
 
   _validatorPhone = value => {
-    if (value &&
+    if (
+      value &&
       String(value)
         .match(/\d+/g)
         .join('').length === 11
@@ -758,18 +788,18 @@ class App {
 
   _getSnamiCustomerInfo = () => {
     return new Promise((resolve, reject) => {
-      requestSnamiCustomerInfo().then(({ data, problem, status }) => {
-        if (data) {
-          this.snamiCustomerName = data.name || '';
-          this.snamiCustomerEmail = data.email || '';
+      requestSnamiCustomerInfo().then(([r1, r2]) => {
+        if (r1.data && r2.data) {
+          this.snamiCustomerName = r1?.data?.name || r2?.data?.name || '';
+          this.snamiCustomerEmail = r1?.data?.user?.login || r2?.data?.user?.login || '';
           resolve();
         } else {
-          if (status >= 401) {
+          if (r1.status >= 401 || r2.status >= 401) {
             this._logOutSnami().then(() => {
               resolve();
             });
           } else {
-            reject(problem);
+            reject(`${r1.problem} ${r2.problem}`);
           }
         }
       });
@@ -806,16 +836,23 @@ class App {
         // https://app.potok.io/jobs/189190/6167883
         // https://app.potok.io/jobs/189190/stage/1515235/6167883
         // https://app.potok.io/jobs/189190/stage/all/?applicantId=6167883
+        // https://app.potok.io/j/189190/all/a/6750265/
         if (/app.potok.io\/applicants\/\d+/.test(url)) {
           const ids = url.match(/\d+/g);
           applicantId = ids[0];
         }
-        if (/app.potok.io\/jobs\/\d+\/\d+/.test(url)) {
+        if (
+          /app.potok.io\/jobs\/\d+\/\d+/.test(url) ||
+          /app.potok.io\/\D+\/\d+\/\D+\/\d+/.test(url)
+        ) {
           const ids = url.match(/\d+/g);
           jobId = ids[0];
           applicantId = ids[1];
         }
-        if (/app.potok.io\/jobs\/\d+\/stage\/\d+\/\d+/.test(url)) {
+        if (
+          /app.potok.io\/\D+\/\d+\/\d+\/\D+\/\d+/.test(url) ||
+          /app.potok.io\/jobs\/\d+\/stage\/\d+\/\d+/.test(url)
+        ) {
           const ids = url.match(/\d+/g);
           jobId = ids[0];
           applicantId = ids[2];
@@ -830,7 +867,7 @@ class App {
             applicantId = applicantStr.match(/\d+/g)[0];
           }
         }
-        if (applicantId || jobId && applicantId) {
+        if (applicantId || (jobId && applicantId)) {
           this._showLoader();
           requestPotokApplicantInfo({ jobId, applicantId }).then(({ data, problem }) => {
             if (data) {
@@ -846,11 +883,9 @@ class App {
               } = data;
               const validPhone = phone ? `7${String(phone).slice(-10)}` : '';
               const formattedBirthday =
-                birthday &&
-                moment(birthday, 'YYYY-MM-DD').format('DD.MM.YYYY');
+                birthday && moment(birthday, 'YYYY-MM-DD').format('DD.MM.YYYY');
               const formattedStartedDate =
-                startedDate &&
-                moment(startedDate, 'YYYY-MM-DD').format('DD.MM.YYYY');
+                startedDate && moment(startedDate, 'YYYY-MM-DD').format('DD.MM.YYYY');
               this.applicant = {
                 applicantId: +applicantId,
                 firstName,

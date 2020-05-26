@@ -1,11 +1,4 @@
 'use strict';
-
-const APP_NAME_SNAMI = 'Snami';
-const BASE_URL_SNAMI_PROD = 'https://snami-back.talenttechlab.org/';
-const BASE_URL_SNAMI_STAGE = 'https://snami-test-back.talenttechlab.org/';
-const APP_NAME_POTOK = 'Potok';
-const BASE_URL_POTOK = 'https://app.potok.io/';
-
 class Api {
   constructor(appName, baseUrl, headers) {
     this.appName = appName;
@@ -70,8 +63,14 @@ class Api {
           } else {
             let problem;
             if (status === 401 && this.refreshToken && !retry) {
-              return this.refreshToken(() =>
-                this._fetch(url, data, method, config, true, resolve, reject),
+              return this.refreshToken(
+                () => this._fetch(url, data, method, config, true, resolve, reject),
+                error =>
+                  resolve({
+                    ok: false,
+                    status,
+                    problem: error || snamiError || potokErrors || 'Что-то пошло не так',
+                  }),
               );
             } else {
               try {
@@ -164,18 +163,56 @@ const potokSetAuthHeaders = ({
 
 const requestSnamiLogin = (login, password) => {
   return new Promise(resolve => {
-    apiSnami.post('customer/login', { login, password }).then(response => {
-      const { ok, data, problem } = response;
-      if (ok && data && data.data && data.data.token) {
-        resolve({ ...response, data: { 'X-Token': data.data.token } });
-      } else {
-        resolve({
-          ...response,
-          data: null,
-          problem: problem || 'Не удалось получить токен',
-        });
-      }
-    });
+    apiSnami
+      .post('customer/login/v2', {
+        login,
+        password,
+        two_factor_endpoint: `${FRONT_URL_SNAMI[apiSnami.baseUrl]}extension.html?ext=${
+          chrome.runtime.id
+        }&login=${login}&key={key}`,
+      })
+      .then(response => {
+        const { ok, data, problem } = response;
+        if (ok && data.data?.token_data?.token) {
+          resolve({
+            ...response,
+            data: { headers: { 'X-Token': data.data.token_data.token } },
+          });
+        } else if (ok && data.data?.two_factor) {
+          resolve({ ...response, data: { twoFactor: true } });
+        } else {
+          resolve({
+            ...response,
+            data: null,
+            problem: problem || 'Не удалось получить токен',
+          });
+        }
+      });
+  });
+};
+
+const requestSnamiLoginTwoFactor = ({login, key}) => {
+  return new Promise(resolve => {
+    apiSnami
+      .post('customer/login/two-factor', {
+        login,
+        key,
+      })
+      .then(response => {
+        const { ok, data, problem } = response;
+        if (ok && data.data?.token) {
+          resolve({
+            ...response,
+            data: { 'X-Token': data.data.token },
+          });
+        } else {
+          resolve({
+            ...response,
+            data: null,
+            problem: problem || 'Не удалось получить токен',
+          });
+        }
+      });
   });
 };
 
@@ -221,22 +258,40 @@ const requestSnamiTokenExchange = token => {
 };
 
 const requestSnamiCustomerInfo = () => {
-  return new Promise(resolve => {
-    apiSnami.get('customer/get').then(response => {
-      const { ok, data, problem } = response;
-      if (ok && data && data.data) {
-        resolve({ ...response, data: data.data, status });
-      } else {
-        resolve({
-          ...response,
-          data: null,
-          problem:
-            problem ||
-            'Не удалось получить информацию о пользователе Snami\nВозможно, необходимо выйти из аккаунта и зайти заново.',
-        });
-      }
-    });
-  });
+  return Promise.all([
+    new Promise(resolve => {
+      apiSnami.get('customer/get').then(response => {
+        const { ok, data, problem } = response;
+        if (ok && data && data.data) {
+          resolve({ ...response, data: data.data, status });
+        } else {
+          resolve({
+            ...response,
+            data: null,
+            problem:
+              problem ||
+              'Не удалось получить информацию о пользователе Snami\nВозможно, необходимо выйти из аккаунта и зайти заново.',
+          });
+        }
+      });
+    }),
+    new Promise(resolve => {
+      apiSnami.get('customer/user/get').then(response => {
+        const { ok, data, problem } = response;
+        if (ok && data && data.data) {
+          resolve({ ...response, data: data.data, status });
+        } else {
+          resolve({
+            ...response,
+            data: null,
+            problem:
+              problem ||
+              'Не удалось получить информацию о пользователе Snami\nВозможно, необходимо выйти из аккаунта и зайти заново.',
+          });
+        }
+      });
+    }),
+  ]);
 };
 
 const requestPotokCustomerInfo = () => {

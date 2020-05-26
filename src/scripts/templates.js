@@ -32,42 +32,77 @@ const getAuthForm = ({
   companyExist,
   login = '',
   password = '',
-  snamiStageServer,
+  snamiServerType = 0,
+  snamiTwoFactorAuth = false,
 } = {}) => {
   return `
     <section class="auth">
       <h1>Вход</h1>
       <h3>Для адаптации сотрудников необходимо войти в приложения Potok и Snami</h3>
-      ${companyExist ? `<h2>Вы успешно авторизованы в ${companyExist} <span class="check-icon blue"></span></h2>` : ''}
-      <h2>Выполните вход в ${companyName}${snamiStageServer ? '&nbsp;&nbsp;&nbsp;<span class="text-red">[STAGE]</span>' : ''}</h2>
-      <form name="${formName}">
-        <div class="form-item">
-          <label class="form-label" htmlFor="${form_authLogin}">Логин</label>
-          <input class="form-input" id="${form_authLogin}" name="${form_authLogin}" type="text" placeholder="Логин" value="${login}" />
-        </div>
-        <div class="form-item">
-          <label class="form-label" htmlFor="${form_authPassword}">Пароль</label>
-          <input class="form-input" id="${form_authPassword}" name="${form_authPassword}" type="password" placeholder="Пароль" value="${password}" />
-        </div>
-        <div id="auth-error"></div>
-        <div class="form-footer">
-          <button type="submit" class="form-button">
-            Войти
-          </button>
-        </div>
-      </form>
+      ${
+        companyExist
+          ? `<h2>Вы успешно авторизованы в ${companyExist} <span class="check-icon blue"></span></h2>`
+          : ''
+      }
+      <h2>Выполните вход в ${companyName}${
+    snamiServerType
+      ? `&nbsp;&nbsp;&nbsp;<span class="text-red">[${
+          snamiServerType === 1 ? 'STAGE' : 'RC'
+        }]</span>`
+      : ''
+  }</h2>
+    ${
+      formName === form_authSnami && login && password && snamiTwoFactorAuth
+        ? `
+        <section class="info small">
+          <img class="info-image" src="./images/info.svg" alt=""/>
+          <div class="info-text">Администратор вашей компании включил двухфакторную авторизацию</div>
+          <div class="info-text">На e-mail аккаунта ${login} отправлена ссылка для авторизации</div>
+          <div class="form-footer">
+            <button type="button" class="form-button" id="${id_logoutSnami}">
+              Сменить аккаунт
+            </button>
+          </div>
+        </section>
+        `
+        : `
+        <form name="${formName}">
+          <div class="form-item">
+            <label class="form-label" htmlFor="${form_authLogin}">Логин</label>
+            <input class="form-input" id="${form_authLogin}" name="${form_authLogin}" type="text" placeholder="Логин" value="${login}" />
+          </div>
+          <div class="form-item">
+            <label class="form-label" htmlFor="${form_authPassword}">Пароль</label>
+            <input class="form-input" id="${form_authPassword}" name="${form_authPassword}" type="password" placeholder="Пароль" value="${password}" />
+          </div>
+          <div id="auth-error"></div>
+          <div class="form-footer">
+            <button type="submit" class="form-button">
+              Войти
+            </button>
+          </div>
+        </form>
+      `
+    }
     </section>
   `;
 };
 
-const template_authSnami = ({ login, password, otherCompanyExist, snamiStageServer }) =>
+const template_authSnami = ({
+  login,
+  password,
+  otherCompanyExist,
+  snamiServerType,
+  snamiTwoFactorAuth,
+}) =>
   getAuthForm({
     login: login ? login : '',
     password: password ? password : '',
     formName: form_authSnami,
     companyName: 'Snami',
     companyExist: otherCompanyExist ? 'Potok' : null,
-    snamiStageServer: !!snamiStageServer,
+    snamiServerType: snamiServerType || 0,
+    snamiTwoFactorAuth: snamiTwoFactorAuth || false,
   });
 
 const template_authPotok = ({ login, password, otherCompanyExist }) =>
@@ -99,7 +134,7 @@ const template_header = ({
   snamiEmail,
   potokName,
   potokEmail,
-  snamiStageServer,
+  snamiServerType,
 } = {}) => {
   if ((snamiName && snamiEmail) || (potokName && potokEmail)) {
     return `
@@ -122,8 +157,10 @@ const template_header = ({
       ${
         snamiName && snamiEmail
           ? getCustomerBox({
-              avatar: snamiStageServer
-                ? './images/avatar_snami_stage.svg'
+              avatar: snamiServerType
+                ? snamiServerType === 1
+                  ? './images/avatar_snami_stage.svg'
+                  : './images/avatar_snami_rc.svg'
                 : './images/avatar_snami.svg',
               name: snamiName,
               email: snamiEmail,
