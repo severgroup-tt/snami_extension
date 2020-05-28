@@ -458,14 +458,13 @@ const requestSnamiLocationList = () => {
   });
 };
 
-const requestSnamiStaffList = ({ locationId = 0, isHR = false, isMentor = false }) => {
+const requestSnamiStaffList = ({ isHR = false, isMentor = false }) => {
   return new Promise(resolve => {
     apiSnami
       .post('customer/staff/list', {
         filter: {
           is_hr: isHR ? 'true' : 'none',
           is_mentor: isMentor ? 'true' : 'none',
-          location_id: locationId,
         },
         page_size: 300,
       })

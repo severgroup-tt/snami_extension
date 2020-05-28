@@ -310,6 +310,7 @@ select::before {
   color: #fff;
   background-color: #26bdfc;
   border-radius: 3px;
+  border-width: 0;
   padding: 14px 20px;
 }
 

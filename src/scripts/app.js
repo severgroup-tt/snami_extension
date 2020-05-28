@@ -1032,10 +1032,10 @@ class App {
 
   _getStaffList = locationId => {
     return new Promise((resolve, reject) => {
-      requestSnamiStaffList({ locationId, isHR: true }).then(({ data, problem }) => {
+      requestSnamiStaffList({ isHR: true }).then(({ data, problem }) => {
         if (data) {
           this.snamiHRList = data;
-          requestSnamiStaffList({ locationId, isMentor: true }).then(({ data, problem }) => {
+          requestSnamiStaffList({ isMentor: true }).then(({ data, problem }) => {
             if (data) {
               this.snamiMentorsList = data;
               resolve();

@@ -329,8 +329,8 @@ const template_candidateForm = ({
 
         <div class="form-row">
           <div class="form-item">
-            <label class="form-label" htmlFor="${form_inputConditions}">Условия работы</label>
-            <input class="form-input" id="${form_inputConditions}" name="${form_inputConditions}" type="text" placeholder="Условия работы" value="${conditions}" />
+            <label class="form-label" htmlFor="${form_inputConditions}">Условия/оборудование</label>
+            <input class="form-input" id="${form_inputConditions}" name="${form_inputConditions}" type="text" placeholder="Условия/оборудование" value="${conditions}" />
           </div>
           <div class="form-item-separator"></div>
           <div class="form-item">
