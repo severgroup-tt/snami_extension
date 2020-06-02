@@ -16,8 +16,7 @@ class Api {
 
   refreshToken = null;
 
-  post = (url, data, config = {}) =>
-    this._fetch(url, data ? JSON.stringify(data) : undefined, 'POST', config);
+  post = (url, data, config = {}) => this._fetch(url, data ? JSON.stringify(data) : undefined, 'POST', config);
 
   get = (url, data, config = {}) => this._fetch(url, data, 'GET', config);
 
@@ -65,12 +64,11 @@ class Api {
             if (status === 401 && this.refreshToken && !retry) {
               return this.refreshToken(
                 () => this._fetch(url, data, method, config, true, resolve, reject),
-                error =>
-                  resolve({
-                    ok: false,
-                    status,
-                    problem: error || snamiError || potokErrors || 'Что-то пошло не так',
-                  }),
+                error => resolve({
+                  ok: false,
+                  status,
+                  problem: error || snamiError || potokErrors || 'Что-то пошло не так',
+                })
               );
             } else {
               try {
@@ -84,7 +82,7 @@ class Api {
               //   ` problem:`,
               //   problem,
               //   ` status:`,
-              //   status,
+              //   status
               // );
               let snamiError = problem && problem.error && problem.error.message;
               try {
@@ -94,11 +92,9 @@ class Api {
                   problem.error.data &&
                   Array.isArray(problem.error.data)
                 ) {
-                  snamiError =
-                    snamiError +
-                    problem.error.data
-                      .map(({ key, value }) => (key && value ? `${key}: ${value}` : ''))
-                      .join(', ');
+                  snamiError = `${snamiError} ${problem.error.data
+                    .map(({ key, value }) => (key && value ? `${key}: ${value}` : ''))
+                    .join(', ')}`;
                 }
               } catch {}
               const potokErrors =
@@ -191,7 +187,7 @@ const requestSnamiLogin = (login, password) => {
   });
 };
 
-const requestSnamiLoginTwoFactor = ({login, key}) => {
+const requestSnamiLoginTwoFactor = ({ login, key }) => {
   return new Promise(resolve => {
     apiSnami
       .post('customer/login/two-factor', {
@@ -375,7 +371,7 @@ const requestSnamiCreateCandidate = (
     conditions = '',
     startedDate = '',
     startedTime = '',
-  },
+  }
 ) => {
   let request = {
     potok_id: applicantId,
@@ -388,11 +384,11 @@ const requestSnamiCreateCandidate = (
     is_candidate: true,
     location_id: locationId,
     mentor_id: mentorId,
-    meta: JSON.stringify({
+    meta: {
       salary,
       vacation_days: vacation,
       work_conditions: conditions,
-    }),
+    },
     phone,
     position,
     sex,
