@@ -396,59 +396,66 @@ class App {
           if (!errors) {
             const phone = String(this.applicant.phone).match(/\d+/g)[0];
             this._showLoader();
-            if (!this.applicant.staffId) {
-              this._checkCandidateExist({ phone })
-                .then(staffByPhone => {
-                  if (staffByPhone && staffByPhone.id && staffByPhone.isFree) {
-                    this.applicant.staffId = staffByPhone.id;
-                  }
-                  requestSnamiCreateCandidate(!this.applicant.staffId, {
-                    ...this.applicant,
-                    locationId: +this.applicant.locationId,
-                    hrId: +this.applicant.hrId,
-                    mentorId: +this.applicant.mentorId,
-                    salary: +this.applicant.salary,
-                    phone,
-                    birthday: this.birthdsayDatepicker.getDate('yyyy-mm-dd') || '',
-                    startedDate: this.startedDatepicker.getDate('yyyy-mm-dd') || '',
-                  }).then(({ problem }) => {
-                    this._hideLoader();
-                    if (problem) {
-                      this._showFormItemError(form_submitCandidate, problem);
-                    } else {
-                      this.mainInfo = this.applicant.editMode
-                        ? 'Данные кандидата обновлены'
-                        : 'Кандидат успешно добавлен в Snami';
-                      this._render();
-                    }
-                  });
-                })
-                .catch(problem => {
+            this._checkCandidateExist({ phone })
+              .then(staffByPhone => {
+                if (staffByPhone && staffByPhone.id && staffByPhone.id !== this.applicant.staffId) {
                   this._hideLoader();
-                  this._showFormItemError(form_submitCandidate, problem);
-                });
-            } else {
-              requestSnamiCreateCandidate(!this.applicant.staffId, {
-                ...this.applicant,
-                locationId: +this.applicant.locationId,
-                hrId: +this.applicant.hrId,
-                mentorId: +this.applicant.mentorId,
-                salary: +this.applicant.salary,
-                phone,
-                birthday: this.birthdsayDatepicker.getDate('yyyy-mm-dd') || '',
-                startedDate: this.startedDatepicker.getDate('yyyy-mm-dd') || '',
-              }).then(({ problem }) => {
-                this._hideLoader();
-                if (problem) {
-                  this._showFormItemError(form_submitCandidate, problem);
+                  this._showFormItemError(
+                    form_submitCandidate,
+                    'Телефонный номер уже используется. Возможно, кандидат уже был добавлен вне расширения.',
+                  );
                 } else {
-                  this.mainInfo = this.applicant.editMode
-                    ? 'Данные кандидата обновлены'
-                    : 'Кандидат успешно добавлен в Snami';
-                  this._render();
+                  if (!this.applicant.staffId) {
+                    requestSnamiCreateCandidate(!this.applicant.staffId, {
+                      ...this.applicant,
+                      locationId: +this.applicant.locationId,
+                      hrId: +this.applicant.hrId,
+                      mentorId: +this.applicant.mentorId,
+                      salary: +this.applicant.salary,
+                      phone,
+                      birthday: this.birthdsayDatepicker.getDate('yyyy-mm-dd') || '',
+                      startedDate: this.startedDatepicker.getDate('yyyy-mm-dd') || '',
+                    }).then(({ problem }) => {
+                      this._hideLoader();
+                      if (problem) {
+                        this._showFormItemError(form_submitCandidate, problem);
+                      } else {
+                        this.mainInfo = this.applicant.editMode
+                          ? 'Данные кандидата обновлены'
+                          : 'Кандидат успешно добавлен в Snami';
+                        this._render();
+                      }
+                    });
+                  } else {
+                    requestSnamiCreateCandidate(!this.applicant.staffId, {
+                      ...this.applicant,
+                      locationId: +this.applicant.locationId,
+                      hrId: +this.applicant.hrId,
+                      mentorId: +this.applicant.mentorId,
+                      salary: +this.applicant.salary,
+                      phone,
+                      birthday: this.birthdsayDatepicker.getDate('yyyy-mm-dd') || '',
+                      startedDate: this.startedDatepicker.getDate('yyyy-mm-dd') || '',
+                    }).then(({ problem }) => {
+                      this._hideLoader();
+                      if (problem) {
+                        this._showFormItemError(form_submitCandidate, problem);
+                      } else {
+                        this.mainInfo = this.applicant.editMode
+                          ? 'Данные кандидата обновлены'
+                          : 'Кандидат успешно добавлен в Snami';
+                        this._render();
+                      }
+                    });
+                  }
                 }
+                console.log('applicantt: ', this.applicant);
+                console.log('staffByPhone: ', staffByPhone);
+              })
+              .catch(problem => {
+                this._hideLoader();
+                this._showFormItemError(form_submitCandidate, problem);
               });
-            }
           }
         }
         break;
