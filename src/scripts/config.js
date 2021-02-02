@@ -6,8 +6,8 @@ const APP_NAME_POTOK = 'Potok';
 const BASE_URL_POTOK = 'https://app.potok.io/';
 const FRONT_URL_SNAMI = {
   [BASE_URL_SNAMI_PROD]: 'https://lk.snami.work/',
-  [BASE_URL_SNAMI_STAGE]: 'https://lk-stage.snami.work/',
-  [BASE_URL_SNAMI_RC]: 'https://lk-rc.snami.work/',
+  [BASE_URL_SNAMI_STAGE]: 'https://lk-new-stage.snami.work/',
+  [BASE_URL_SNAMI_RC]: 'https://lk-new-rc.snami.work/',
 };
 
 const storageSync = chrome.storage.sync;

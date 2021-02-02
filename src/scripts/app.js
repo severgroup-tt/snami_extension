@@ -47,6 +47,8 @@ class App {
     this.snamiLocationsList = [];
     this.snamiHRList = [];
     this.snamiMentorsList = [];
+    this.mentorAutocomplete = null;
+    this.hrAutocomplete = null;
     this.mainInfo = '';
     this.maskPhone = null;
     this.birthdsayDatepicker = null;
@@ -113,7 +115,7 @@ class App {
               snamiServerType: this.snamiServerType,
               snamiTwoFactorAuth: snamiTwoFactorAuth,
             });
-          },
+          }
         );
       } else if (this.applicant && this.snamiLocationsList) {
         this.appContainer.innerHTML = template_candidateForm({
@@ -122,6 +124,86 @@ class App {
           HRsList: this.snamiHRList,
           mentorsList: this.snamiMentorsList,
         });
+        if (this.applicant.locationId) {
+          document.getElementById(form_selectMentorId).removeAttribute('disabled');
+          document
+            .getElementById(form_selectMentorId)
+            .setAttribute('placeholder', 'Выберите наставника');
+          document.getElementById(form_selectHrId).removeAttribute('disabled');
+          document.getElementById(form_selectHrId).setAttribute('placeholder', 'Выберите HR');
+          document.getElementById(form_selectMentorId).addEventListener('blur', e => {
+            if (!this.applicant.mentorId) {
+              e.target.value = '';
+            }
+          });
+          document.getElementById(form_selectMentorId).addEventListener('keyup', e => {
+            if (e.keyCode === 13) {
+              if (!this.applicant.mentorId) {
+                e.target.value = '';
+              }
+              e.preventDefault();
+            }
+          });
+          document.getElementById(form_selectMentorId).addEventListener('input', e => {
+            this.applicant.mentorId = '';
+          });
+          document.getElementById(form_selectHrId).addEventListener('blur', e => {
+            if (!this.applicant.hrId) {
+              e.target.value = '';
+            }
+          });
+          document.getElementById(form_selectHrId).addEventListener('keyup', e => {
+            if (e.keyCode === 13) {
+              if (!this.applicant.hrId) {
+                e.target.value = '';
+              }
+              e.preventDefault();
+            }
+          });
+          document.getElementById(form_selectHrId).addEventListener('input', e => {
+            this.applicant.hrId = '';
+          });
+        } else {
+          document.getElementById(form_selectMentorId).setAttribute('disabled', 'disabled');
+          document
+            .getElementById(form_selectMentorId)
+            .setAttribute('placeholder', 'Сначала выберите локацию');
+          document.getElementById(form_selectHrId).setAttribute('disabled', 'disabled');
+          document
+            .getElementById(form_selectHrId)
+            .setAttribute('placeholder', 'Сначала выберите локацию');
+        }
+        if (this.snamiMentorsList.length) {
+          const applicant = this.applicant;
+          this.mentorAutocomplete = new Awesomplete(document.getElementById(form_selectMentorId), {
+            minChars: 1,
+            list: this.snamiMentorsList.map(item => ({
+              value: item.id,
+              label: `${item.last_name} ${item.first_name} ${item.middle_name}`,
+            })),
+            // insert label instead of value into the input.
+            replace: function(suggestion) {
+              applicant.mentorId = suggestion.value;
+              this.input.value = suggestion.label;
+            },
+          });
+        }
+        if (this.snamiHRList.length) {
+          const applicant = this.applicant;
+          this.hrAutocomplete = new Awesomplete(document.getElementById(form_selectHrId), {
+            minChars: 1,
+            list: this.snamiHRList.map(item => ({
+              value: item.id,
+              label: `${item.last_name} ${item.first_name} ${item.middle_name}`,
+            })),
+            // insert label instead of value into the input.
+            replace: function(suggestion) {
+              applicant.hrId = suggestion.value;
+              this.input.value = suggestion.label;
+            },
+          });
+        }
+
         this.maskPhone = IMask(document.getElementById(form_inputPhone), {
           mask: '+{7} 000 000-00-00',
         });
@@ -161,12 +243,12 @@ class App {
         });
         this.birthdsayDatepicker = new Datepicker(
           document.getElementById(form_inputBirthday),
-          datePickerOptions,
+          datePickerOptions
         );
         this.birthdsayDatepicker.element.addEventListener('changeDate', this._onChangeElement);
         this.startedDatepicker = new Datepicker(
           document.getElementById(form_inputStartedDate),
-          datePickerOptions,
+          datePickerOptions
         );
         this.startedDatepicker.element.addEventListener('changeDate', this._onChangeElement);
       } else {
@@ -189,7 +271,7 @@ class App {
             ? this.snamiServerType === 1
               ? BASE_URL_SNAMI_STAGE
               : BASE_URL_SNAMI_RC
-            : BASE_URL_SNAMI_PROD,
+            : BASE_URL_SNAMI_PROD
         );
         if (this.snamiHeaders && this.potokHeaders) {
           snamiSetAuthHeaders(this.snamiHeaders);
@@ -258,7 +340,7 @@ class App {
         } else {
           this._render();
         }
-      },
+      }
     );
   };
 
@@ -291,7 +373,7 @@ class App {
                     { authLogin: '', authPassword: '', snamiTwoFactorAuth: false },
                     () => {
                       this._initApp();
-                    },
+                    }
                   );
                 });
               } else if (data?.twoFactor) {
@@ -326,71 +408,71 @@ class App {
             this.applicant.firstName,
             form_inputFirstName,
             'Обязательное поле',
-            this._validatorNoEmpty,
+            this._validatorNoEmpty
           );
           errors += this._validateFormItem(
             this.applicant.lastName,
             form_inputLastName,
             'Обязательное поле',
-            this._validatorNoEmpty,
+            this._validatorNoEmpty
           );
           errors += this._validateFormItem(
             this.applicant.birthday,
             form_inputBirthday,
             'Формат: ДД.MM.ГГГГ или пустое',
             null,
-            /^$|^\d{2}.\d{2}.\d{4}$/,
+            /^$|^\d{2}.\d{2}.\d{4}$/
           );
           errors += this._validateFormItem(
             this.applicant.sex,
             form_inputSex,
             'Обязательное поле',
-            this._validatorNoNull,
+            this._validatorNoNull
           );
           errors += this._validateFormItem(
             this.applicant.phone,
             form_inputPhone,
             'Обязательное поле, формат: +7 999 999-99-99',
-            this._validatorPhone,
+            this._validatorPhone
           );
           errors += this._validateFormItem(
             this.applicant.email,
             form_inputEmail,
             'Формат some@email.com или пустое',
             null,
-            /^$|^\S{1,}@\S{1,}\.\S{1,}$/,
+            /^$|^\S{1,}@\S{1,}\.\S{1,}$/
           );
           errors += this._validateFormItem(
             this.applicant.locationId,
             form_selectLocationId,
             'Обязательное поле',
-            this._validatorNoEmpty,
+            this._validatorNoEmpty
           );
           errors += this._validateFormItem(
             this.applicant.hrId,
             form_selectHrId,
             'Обязательное поле',
-            this._validatorNoEmpty,
+            this._validatorNoEmpty
           );
           errors += this._validateFormItem(
             this.applicant.mentorId,
             form_selectMentorId,
             'Обязательное поле',
-            this._validatorNoEmpty,
+            this._validatorNoEmpty
           );
           errors += this._validateFormItem(
             this.applicant.startedDate,
             form_inputStartedDate,
             'Формат ДД.MM.ГГГГ или пустое',
             null,
-            /^$|^^\d{2}.\d{2}.\d{4}$/,
+            /^$|^^\d{2}.\d{2}.\d{4}$/
           );
           errors += this._validateFormItem(
             this.applicant.startedTime,
             form_inputStartedTime,
             'Формат 00:00 или пустое',
             null,
-            /^$|^\d{2}:\d{2}$/,
+            /^$|^\d{2}:\d{2}$/
           );
           this._hideFormItemError(form_submitCandidate);
           if (!errors) {
@@ -402,7 +484,7 @@ class App {
                   this._hideLoader();
                   this._showFormItemError(
                     form_submitCandidate,
-                    'Телефонный номер уже используется. Возможно, кандидат уже был добавлен вне расширения.',
+                    'Телефонный номер уже используется. Возможно, кандидат уже был добавлен вне расширения.'
                   );
                 } else {
                   if (!this.applicant.staffId) {
@@ -449,7 +531,9 @@ class App {
                     });
                   }
                 }
-                console.log('applicantt: ', this.applicant);
+                // eslint-disable-next-line no-console
+                console.log('applicant: ', this.applicant);
+                // eslint-disable-next-line no-console
                 console.log('staffByPhone: ', staffByPhone);
               })
               .catch(problem => {
@@ -494,7 +578,7 @@ class App {
               : BASE_URL_SNAMI_PROD
           ]
         }report/meeting`,
-        '_blank',
+        '_blank'
       );
     }
   };
@@ -510,7 +594,7 @@ class App {
           value,
           form_inputFirstName,
           'Обязательное поле',
-          this._validatorNoEmpty,
+          this._validatorNoEmpty
         );
         break;
       case form_inputLastName:
@@ -519,7 +603,7 @@ class App {
           value,
           form_inputLastName,
           'Обязательное поле',
-          this._validatorNoEmpty,
+          this._validatorNoEmpty
         );
         break;
       case form_inputMiddleName:
@@ -532,7 +616,7 @@ class App {
           form_inputBirthday,
           'Формат: ДД.MM.ГГГГ или пустое',
           null,
-          /^$|^\d{2}.\d{2}.\d{4}$/,
+          /^$|^\d{2}.\d{2}.\d{4}$/
         );
         break;
       case form_inputPhone:
@@ -543,7 +627,7 @@ class App {
           value,
           form_inputPhone,
           'Обязательное поле, формат: +7 999 999-99-99',
-          this._validatorPhone,
+          this._validatorPhone
         );
         break;
       case form_inputEmail:
@@ -553,7 +637,7 @@ class App {
           form_inputEmail,
           'Формат some@email.com или пустое',
           null,
-          /^$|^\S{1,}@\S{1,}\.\S{1,}$/,
+          /^$|^\S{1,}@\S{1,}\.\S{1,}$/
         );
         break;
       case form_inputPosition:
@@ -575,7 +659,7 @@ class App {
           form_inputStartedTime,
           'Формат 00:00 или пустое',
           null,
-          /^$|^\d{2}:\d{2}$/,
+          /^$|^\d{2}:\d{2}$/
         );
         break;
       case form_inputStartedDate:
@@ -585,7 +669,7 @@ class App {
           form_inputStartedDate,
           'Формат ДД.MM.ГГГГ или пустое',
           null,
-          /^$|^^\d{2}.\d{2}.\d{4}$/,
+          /^$|^^\d{2}.\d{2}.\d{4}$/
         );
         break;
 
@@ -613,7 +697,7 @@ class App {
               ? snamiServerType === 1
                 ? BASE_URL_SNAMI_STAGE
                 : BASE_URL_SNAMI_RC
-              : BASE_URL_SNAMI_PROD,
+              : BASE_URL_SNAMI_PROD
           );
           this._render();
         });
@@ -728,14 +812,10 @@ class App {
         }
         break;
       case form_selectHrId:
-        {
-          this.applicant.hrId = value;
-        }
+        // Do nothing
         break;
       case form_selectMentorId:
-        {
-          this.applicant.mentorId = value;
-        }
+        // Do nothing
         break;
       case form_inputBirthday:
         this.applicant.birthday = Datepicker.formatDate(detail.date, 'dd.mm.yyyy');
@@ -1014,7 +1094,7 @@ class App {
             reject(
               `Кандидат ${name} уже адаптируется в ${
                 customer?.is_own ? 'вашей' : 'другой'
-              } компании.`,
+              } компании.`
             );
           }
         } else {
