@@ -63,7 +63,8 @@ class App {
     this.clickListener = document.addEventListener('click', this._onClickElement);
     this.changeListener = document.addEventListener('change', this._onChangeElement);
     this.inputChangeListener = document.addEventListener('input', this._onInputElement);
-    this.inputBlurListener = document.addEventListener('blur', this._onInputElement);
+    // Событие blur можно перехватить только на этапе погружения события
+    this.inputBlurListener = document.addEventListener('blur', this._onInputElement, true);
     this.keyDownListener = document.addEventListener('keydown', this._onKey);
     this.keyUpListener = document.addEventListener('keyup', this._onKey);
     apiSnami.refreshToken = this._refreshSnamiToken;
@@ -124,58 +125,35 @@ class App {
           HRsList: this.snamiHRList,
           mentorsList: this.snamiMentorsList,
         });
+        const mentorElement = document.getElementById(form_selectMentorId);
+        const hrElement = document.getElementById(form_selectHrId);
+
         if (this.applicant.locationId) {
-          document.getElementById(form_selectMentorId).removeAttribute('disabled');
-          document
-            .getElementById(form_selectMentorId)
-            .setAttribute('placeholder', 'Выберите наставника');
-          document.getElementById(form_selectHrId).removeAttribute('disabled');
-          document.getElementById(form_selectHrId).setAttribute('placeholder', 'Выберите HR');
-          document.getElementById(form_selectMentorId).addEventListener('blur', e => {
-            if (!this.applicant.mentorId) {
-              e.target.value = '';
+          mentorElement.removeAttribute('disabled');
+          mentorElement.setAttribute('placeholder', 'Выберите руководителя');
+          hrElement.removeAttribute('disabled');
+          hrElement.setAttribute('placeholder', 'Выберите HR');
+          if (this.applicant.hrId) {
+            const hr = this.snamiHRList.find(item => item.id === this.applicant.hrId);
+            if (hr) {
+              hrElement.value = `${hr.last_name} ${hr.first_name} ${hr.middle_name}`;
             }
-          });
-          document.getElementById(form_selectMentorId).addEventListener('keyup', e => {
-            if (e.keyCode === 13) {
-              if (!this.applicant.mentorId) {
-                e.target.value = '';
-              }
-              e.preventDefault();
+          }
+          if (this.applicant.mentorId) {
+            const mentor = this.snamiMentorsList.find(item => item.id === this.applicant.mentorId);
+            if (mentor) {
+              mentorElement.value = `${mentor.last_name} ${mentor.first_name} ${mentor.middle_name}`;
             }
-          });
-          document.getElementById(form_selectMentorId).addEventListener('input', e => {
-            this.applicant.mentorId = '';
-          });
-          document.getElementById(form_selectHrId).addEventListener('blur', e => {
-            if (!this.applicant.hrId) {
-              e.target.value = '';
-            }
-          });
-          document.getElementById(form_selectHrId).addEventListener('keyup', e => {
-            if (e.keyCode === 13) {
-              if (!this.applicant.hrId) {
-                e.target.value = '';
-              }
-              e.preventDefault();
-            }
-          });
-          document.getElementById(form_selectHrId).addEventListener('input', e => {
-            this.applicant.hrId = '';
-          });
+          }
         } else {
-          document.getElementById(form_selectMentorId).setAttribute('disabled', 'disabled');
-          document
-            .getElementById(form_selectMentorId)
-            .setAttribute('placeholder', 'Сначала выберите локацию');
-          document.getElementById(form_selectHrId).setAttribute('disabled', 'disabled');
-          document
-            .getElementById(form_selectHrId)
-            .setAttribute('placeholder', 'Сначала выберите локацию');
+          mentorElement.setAttribute('disabled', 'disabled');
+          mentorElement.setAttribute('placeholder', 'Сначала выберите локацию');
+          hrElement.setAttribute('disabled', 'disabled');
+          hrElement.setAttribute('placeholder', 'Сначала выберите локацию');
         }
         if (this.snamiMentorsList.length) {
           const applicant = this.applicant;
-          this.mentorAutocomplete = new Awesomplete(document.getElementById(form_selectMentorId), {
+          this.mentorAutocomplete = new Awesomplete(mentorElement, {
             minChars: 1,
             list: this.snamiMentorsList.map(item => ({
               value: item.id,
@@ -190,7 +168,7 @@ class App {
         }
         if (this.snamiHRList.length) {
           const applicant = this.applicant;
-          this.hrAutocomplete = new Awesomplete(document.getElementById(form_selectHrId), {
+          this.hrAutocomplete = new Awesomplete(hrElement, {
             minChars: 1,
             list: this.snamiHRList.map(item => ({
               value: item.id,
@@ -212,11 +190,6 @@ class App {
           min: 0,
           max: 999999999,
           thousandsSeparator: ' ',
-        });
-        this.maskVacation = IMask(document.getElementById(form_inputVacation), {
-          mask: Number,
-          min: 0,
-          max: 999,
         });
         const timeFormat = 'HH:mm';
         this.maskStartedTime = IMask(document.getElementById(form_inputStartedTime), {
@@ -347,7 +320,7 @@ class App {
   _onSubmitForm = event => {
     event.preventDefault();
     const {
-      target: { id, name, elements },
+      target: { name, elements },
     } = event;
     switch (name) {
       case form_authSnami:
@@ -577,16 +550,17 @@ class App {
                 : BASE_URL_SNAMI_RC
               : BASE_URL_SNAMI_PROD
           ]
-        }report/meeting`,
+        }report/meeting${
+          this.applicant.locationId ? `?locationId=${this.applicant.locationId}` : ''
+        }`,
         '_blank'
       );
     }
   };
 
   _onInputElement = event => {
-    const {
-      target: { id: targetId, value },
-    } = event;
+    const { target, type } = event;
+    const { id: targetId, value } = target;
     switch (targetId) {
       case form_inputFirstName:
         this.applicant.firstName = value;
@@ -640,6 +614,24 @@ class App {
           /^$|^\S{1,}@\S{1,}\.\S{1,}$/
         );
         break;
+      case form_selectHrId:
+        if (type === 'blur') {
+          if (!this.applicant.hrId) {
+            target.value = '';
+          }
+        } else {
+          this.applicant.hrId = '';
+        }
+        break;
+      case form_selectMentorId:
+        if (type === 'blur') {
+          if (!this.applicant.mentorId) {
+            target.value = '';
+          }
+        } else {
+          this.applicant.mentorId = '';
+        }
+        break;
       case form_inputPosition:
         this.applicant.position = value;
         break;
@@ -679,8 +671,17 @@ class App {
   };
 
   _onKey = event => {
-    const { type, keyCode } = event;
+    const { type, keyCode, target } = event;
     this.keysPressed[keyCode] = type === 'keydown';
+
+    if (keyCode === 13) {
+      if (target.id === form_selectHrId && !this.applicant.hrId) {
+        target.value = '';
+      }
+      if (target.id === form_selectMentorId && !this.applicant.mentorId) {
+        target.value = '';
+      }
+    }
 
     if (
       this.keysPressed[83] &&
@@ -1119,10 +1120,10 @@ class App {
 
   _getStaffList = locationId => {
     return new Promise((resolve, reject) => {
-      requestSnamiStaffList({ isHR: true }).then(({ data, problem }) => {
+      requestSnamiStaffList({}).then(({ data, problem }) => {
         if (data) {
           this.snamiHRList = data;
-          requestSnamiStaffList({ isMentor: true }).then(({ data, problem }) => {
+          requestSnamiStaffList({}).then(({ data, problem }) => {
             if (data) {
               this.snamiMentorsList = data;
               resolve();

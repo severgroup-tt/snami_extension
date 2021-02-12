@@ -285,7 +285,7 @@ const template_candidateForm = ({
           </div>
           <div class="form-item-separator"></div>
           <div class="form-item">
-            <label class="form-label required" htmlFor="${form_selectMentorId}">Наставник</label>
+            <label class="form-label required" htmlFor="${form_selectMentorId}">Руководитель</label>
             <div class="awesomplete">
                 <input name="${form_selectMentorId}" id="${form_selectMentorId}" type="text" autocomplete="off"/>
             </div>

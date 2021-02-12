@@ -1,6 +1,6 @@
 {
   "name": "snami_extension",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": true,
   "scripts": {
     "lint": "eslint .",
@@ -27,5 +27,17 @@
     "jetifier": "^1.6.4",
     "lint-staged": "^9.2.0",
     "prettier": "^1.18.2"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "src/**/*.js": [
+      "prettier --write",
+      "eslint --fix --max-warnings 5",
+      "git add"
+    ]
   }
 }
