@@ -1,6 +1,6 @@
 {
   "name": "Snami&Potok",
-  "version": "1.4.7",
+  "version": "1.4.8",
   "description": "Расширение позволяет отправлять сотрудников из платформы для рекрутмента Potok напрямую в сервис адаптации Снами",
   "permissions": [
     "tabs",
@@ -9,11 +9,11 @@
     "storage",
     "https://app.potok.io/*",
     "https://snami.work/*",
-    "https://*.snami.work/*",
+    "https://*.snami.work/*"
   ],
   "background": {
     "scripts": ["src/scripts/config.js", "src/scripts/api.js", "src/scripts/background.js"],
-    "persistent": false,
+    "persistent": false
   },
   "browser_action": {
     "default_popup": "src/popup.html",
@@ -21,14 +21,14 @@
       "16": "src/images/logo_extension_check.png",
       "32": "src/images/logo_extension_check@2x.png",
       "48": "src/images/logo_extension_check@3x.png",
-      "128": "src/images/logo_extension_check@8x.png",
-    },
+      "128": "src/images/logo_extension_check@8x.png"
+    }
   },
   "icons": {
     "16": "src/images/logo_extension.png",
     "32": "src/images/logo_extension@2x.png",
     "48": "src/images/logo_extension@3x.png",
-    "128": "src/images/logo_extension@8x.png",
+    "128": "src/images/logo_extension@8x.png"
   },
-  "manifest_version": 2,
+  "manifest_version": 2
 }

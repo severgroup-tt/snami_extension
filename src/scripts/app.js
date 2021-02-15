@@ -504,10 +504,6 @@ class App {
                     });
                   }
                 }
-                // eslint-disable-next-line no-console
-                console.log('applicant: ', this.applicant);
-                // eslint-disable-next-line no-console
-                console.log('staffByPhone: ', staffByPhone);
               })
               .catch(problem => {
                 this._hideLoader();
