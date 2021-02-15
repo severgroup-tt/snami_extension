@@ -47,6 +47,8 @@ class App {
     this.snamiLocationsList = [];
     this.snamiHRList = [];
     this.snamiMentorsList = [];
+    this.mentorAutocomplete = null;
+    this.hrAutocomplete = null;
     this.mainInfo = '';
     this.maskPhone = null;
     this.birthdsayDatepicker = null;
@@ -61,7 +63,8 @@ class App {
     this.clickListener = document.addEventListener('click', this._onClickElement);
     this.changeListener = document.addEventListener('change', this._onChangeElement);
     this.inputChangeListener = document.addEventListener('input', this._onInputElement);
-    this.inputBlurListener = document.addEventListener('blur', this._onInputElement);
+    // Событие blur можно перехватить только на этапе погружения события
+    this.inputBlurListener = document.addEventListener('blur', this._onInputElement, true);
     this.keyDownListener = document.addEventListener('keydown', this._onKey);
     this.keyUpListener = document.addEventListener('keyup', this._onKey);
     apiSnami.refreshToken = this._refreshSnamiToken;
@@ -113,7 +116,7 @@ class App {
               snamiServerType: this.snamiServerType,
               snamiTwoFactorAuth: snamiTwoFactorAuth,
             });
-          },
+          }
         );
       } else if (this.applicant && this.snamiLocationsList) {
         this.appContainer.innerHTML = template_candidateForm({
@@ -122,6 +125,63 @@ class App {
           HRsList: this.snamiHRList,
           mentorsList: this.snamiMentorsList,
         });
+        const mentorElement = document.getElementById(form_selectMentorId);
+        const hrElement = document.getElementById(form_selectHrId);
+
+        if (this.applicant.locationId) {
+          mentorElement.removeAttribute('disabled');
+          mentorElement.setAttribute('placeholder', 'Выберите руководителя');
+          hrElement.removeAttribute('disabled');
+          hrElement.setAttribute('placeholder', 'Выберите HR');
+          if (this.applicant.hrId) {
+            const hr = this.snamiHRList.find(item => item.id === this.applicant.hrId);
+            if (hr) {
+              hrElement.value = `${hr.last_name} ${hr.first_name} ${hr.middle_name}`;
+            }
+          }
+          if (this.applicant.mentorId) {
+            const mentor = this.snamiMentorsList.find(item => item.id === this.applicant.mentorId);
+            if (mentor) {
+              mentorElement.value = `${mentor.last_name} ${mentor.first_name} ${mentor.middle_name}`;
+            }
+          }
+        } else {
+          mentorElement.setAttribute('disabled', 'disabled');
+          mentorElement.setAttribute('placeholder', 'Сначала выберите локацию');
+          hrElement.setAttribute('disabled', 'disabled');
+          hrElement.setAttribute('placeholder', 'Сначала выберите локацию');
+        }
+        if (this.snamiMentorsList.length) {
+          const applicant = this.applicant;
+          this.mentorAutocomplete = new Awesomplete(mentorElement, {
+            minChars: 1,
+            list: this.snamiMentorsList.map(item => ({
+              value: item.id,
+              label: `${item.last_name} ${item.first_name} ${item.middle_name}`,
+            })),
+            // insert label instead of value into the input.
+            replace: function(suggestion) {
+              applicant.mentorId = suggestion.value;
+              this.input.value = suggestion.label;
+            },
+          });
+        }
+        if (this.snamiHRList.length) {
+          const applicant = this.applicant;
+          this.hrAutocomplete = new Awesomplete(hrElement, {
+            minChars: 1,
+            list: this.snamiHRList.map(item => ({
+              value: item.id,
+              label: `${item.last_name} ${item.first_name} ${item.middle_name}`,
+            })),
+            // insert label instead of value into the input.
+            replace: function(suggestion) {
+              applicant.hrId = suggestion.value;
+              this.input.value = suggestion.label;
+            },
+          });
+        }
+
         this.maskPhone = IMask(document.getElementById(form_inputPhone), {
           mask: '+{7} 000 000-00-00',
         });
@@ -130,11 +190,6 @@ class App {
           min: 0,
           max: 999999999,
           thousandsSeparator: ' ',
-        });
-        this.maskVacation = IMask(document.getElementById(form_inputVacation), {
-          mask: Number,
-          min: 0,
-          max: 999,
         });
         const timeFormat = 'HH:mm';
         this.maskStartedTime = IMask(document.getElementById(form_inputStartedTime), {
@@ -161,12 +216,12 @@ class App {
         });
         this.birthdsayDatepicker = new Datepicker(
           document.getElementById(form_inputBirthday),
-          datePickerOptions,
+          datePickerOptions
         );
         this.birthdsayDatepicker.element.addEventListener('changeDate', this._onChangeElement);
         this.startedDatepicker = new Datepicker(
           document.getElementById(form_inputStartedDate),
-          datePickerOptions,
+          datePickerOptions
         );
         this.startedDatepicker.element.addEventListener('changeDate', this._onChangeElement);
       } else {
@@ -189,7 +244,7 @@ class App {
             ? this.snamiServerType === 1
               ? BASE_URL_SNAMI_STAGE
               : BASE_URL_SNAMI_RC
-            : BASE_URL_SNAMI_PROD,
+            : BASE_URL_SNAMI_PROD
         );
         if (this.snamiHeaders && this.potokHeaders) {
           snamiSetAuthHeaders(this.snamiHeaders);
@@ -258,14 +313,14 @@ class App {
         } else {
           this._render();
         }
-      },
+      }
     );
   };
 
   _onSubmitForm = event => {
     event.preventDefault();
     const {
-      target: { id, name, elements },
+      target: { name, elements },
     } = event;
     switch (name) {
       case form_authSnami:
@@ -291,7 +346,7 @@ class App {
                     { authLogin: '', authPassword: '', snamiTwoFactorAuth: false },
                     () => {
                       this._initApp();
-                    },
+                    }
                   );
                 });
               } else if (data?.twoFactor) {
@@ -326,71 +381,71 @@ class App {
             this.applicant.firstName,
             form_inputFirstName,
             'Обязательное поле',
-            this._validatorNoEmpty,
+            this._validatorNoEmpty
           );
           errors += this._validateFormItem(
             this.applicant.lastName,
             form_inputLastName,
             'Обязательное поле',
-            this._validatorNoEmpty,
+            this._validatorNoEmpty
           );
           errors += this._validateFormItem(
             this.applicant.birthday,
             form_inputBirthday,
             'Формат: ДД.MM.ГГГГ или пустое',
             null,
-            /^$|^\d{2}.\d{2}.\d{4}$/,
+            /^$|^\d{2}.\d{2}.\d{4}$/
           );
           errors += this._validateFormItem(
             this.applicant.sex,
             form_inputSex,
             'Обязательное поле',
-            this._validatorNoNull,
+            this._validatorNoNull
           );
           errors += this._validateFormItem(
             this.applicant.phone,
             form_inputPhone,
             'Обязательное поле, формат: +7 999 999-99-99',
-            this._validatorPhone,
+            this._validatorPhone
           );
           errors += this._validateFormItem(
             this.applicant.email,
             form_inputEmail,
             'Формат some@email.com или пустое',
             null,
-            /^$|^\S{1,}@\S{1,}\.\S{1,}$/,
+            /^$|^\S{1,}@\S{1,}\.\S{1,}$/
           );
           errors += this._validateFormItem(
             this.applicant.locationId,
             form_selectLocationId,
             'Обязательное поле',
-            this._validatorNoEmpty,
+            this._validatorNoEmpty
           );
           errors += this._validateFormItem(
             this.applicant.hrId,
             form_selectHrId,
             'Обязательное поле',
-            this._validatorNoEmpty,
+            this._validatorNoEmpty
           );
           errors += this._validateFormItem(
             this.applicant.mentorId,
             form_selectMentorId,
             'Обязательное поле',
-            this._validatorNoEmpty,
+            this._validatorNoEmpty
           );
           errors += this._validateFormItem(
             this.applicant.startedDate,
             form_inputStartedDate,
             'Формат ДД.MM.ГГГГ или пустое',
             null,
-            /^$|^^\d{2}.\d{2}.\d{4}$/,
+            /^$|^^\d{2}.\d{2}.\d{4}$/
           );
           errors += this._validateFormItem(
             this.applicant.startedTime,
             form_inputStartedTime,
             'Формат 00:00 или пустое',
             null,
-            /^$|^\d{2}:\d{2}$/,
+            /^$|^\d{2}:\d{2}$/
           );
           this._hideFormItemError(form_submitCandidate);
           if (!errors) {
@@ -402,7 +457,7 @@ class App {
                   this._hideLoader();
                   this._showFormItemError(
                     form_submitCandidate,
-                    'Телефонный номер уже используется. Возможно, кандидат уже был добавлен вне расширения.',
+                    'Телефонный номер уже используется. Возможно, кандидат уже был добавлен вне расширения.'
                   );
                 } else {
                   if (!this.applicant.staffId) {
@@ -449,8 +504,6 @@ class App {
                     });
                   }
                 }
-                console.log('applicantt: ', this.applicant);
-                console.log('staffByPhone: ', staffByPhone);
               })
               .catch(problem => {
                 this._hideLoader();
@@ -493,16 +546,17 @@ class App {
                 : BASE_URL_SNAMI_RC
               : BASE_URL_SNAMI_PROD
           ]
-        }report/meeting`,
-        '_blank',
+        }report/meeting${
+          this.applicant.locationId ? `?locationId=${this.applicant.locationId}` : ''
+        }`,
+        '_blank'
       );
     }
   };
 
   _onInputElement = event => {
-    const {
-      target: { id: targetId, value },
-    } = event;
+    const { target, type } = event;
+    const { id: targetId, value } = target;
     switch (targetId) {
       case form_inputFirstName:
         this.applicant.firstName = value;
@@ -510,7 +564,7 @@ class App {
           value,
           form_inputFirstName,
           'Обязательное поле',
-          this._validatorNoEmpty,
+          this._validatorNoEmpty
         );
         break;
       case form_inputLastName:
@@ -519,7 +573,7 @@ class App {
           value,
           form_inputLastName,
           'Обязательное поле',
-          this._validatorNoEmpty,
+          this._validatorNoEmpty
         );
         break;
       case form_inputMiddleName:
@@ -532,7 +586,7 @@ class App {
           form_inputBirthday,
           'Формат: ДД.MM.ГГГГ или пустое',
           null,
-          /^$|^\d{2}.\d{2}.\d{4}$/,
+          /^$|^\d{2}.\d{2}.\d{4}$/
         );
         break;
       case form_inputPhone:
@@ -543,7 +597,7 @@ class App {
           value,
           form_inputPhone,
           'Обязательное поле, формат: +7 999 999-99-99',
-          this._validatorPhone,
+          this._validatorPhone
         );
         break;
       case form_inputEmail:
@@ -553,8 +607,26 @@ class App {
           form_inputEmail,
           'Формат some@email.com или пустое',
           null,
-          /^$|^\S{1,}@\S{1,}\.\S{1,}$/,
+          /^$|^\S{1,}@\S{1,}\.\S{1,}$/
         );
+        break;
+      case form_selectHrId:
+        if (type === 'blur') {
+          if (!this.applicant.hrId) {
+            target.value = '';
+          }
+        } else {
+          this.applicant.hrId = '';
+        }
+        break;
+      case form_selectMentorId:
+        if (type === 'blur') {
+          if (!this.applicant.mentorId) {
+            target.value = '';
+          }
+        } else {
+          this.applicant.mentorId = '';
+        }
         break;
       case form_inputPosition:
         this.applicant.position = value;
@@ -575,7 +647,7 @@ class App {
           form_inputStartedTime,
           'Формат 00:00 или пустое',
           null,
-          /^$|^\d{2}:\d{2}$/,
+          /^$|^\d{2}:\d{2}$/
         );
         break;
       case form_inputStartedDate:
@@ -585,7 +657,7 @@ class App {
           form_inputStartedDate,
           'Формат ДД.MM.ГГГГ или пустое',
           null,
-          /^$|^^\d{2}.\d{2}.\d{4}$/,
+          /^$|^^\d{2}.\d{2}.\d{4}$/
         );
         break;
 
@@ -595,8 +667,17 @@ class App {
   };
 
   _onKey = event => {
-    const { type, keyCode } = event;
+    const { type, keyCode, target } = event;
     this.keysPressed[keyCode] = type === 'keydown';
+
+    if (keyCode === 13) {
+      if (target.id === form_selectHrId && !this.applicant.hrId) {
+        target.value = '';
+      }
+      if (target.id === form_selectMentorId && !this.applicant.mentorId) {
+        target.value = '';
+      }
+    }
 
     if (
       this.keysPressed[83] &&
@@ -613,7 +694,7 @@ class App {
               ? snamiServerType === 1
                 ? BASE_URL_SNAMI_STAGE
                 : BASE_URL_SNAMI_RC
-              : BASE_URL_SNAMI_PROD,
+              : BASE_URL_SNAMI_PROD
           );
           this._render();
         });
@@ -728,14 +809,10 @@ class App {
         }
         break;
       case form_selectHrId:
-        {
-          this.applicant.hrId = value;
-        }
+        // Do nothing
         break;
       case form_selectMentorId:
-        {
-          this.applicant.mentorId = value;
-        }
+        // Do nothing
         break;
       case form_inputBirthday:
         this.applicant.birthday = Datepicker.formatDate(detail.date, 'dd.mm.yyyy');
@@ -1014,7 +1091,7 @@ class App {
             reject(
               `Кандидат ${name} уже адаптируется в ${
                 customer?.is_own ? 'вашей' : 'другой'
-              } компании.`,
+              } компании.`
             );
           }
         } else {
@@ -1039,10 +1116,10 @@ class App {
 
   _getStaffList = locationId => {
     return new Promise((resolve, reject) => {
-      requestSnamiStaffList({ isHR: true }).then(({ data, problem }) => {
+      requestSnamiStaffList({}).then(({ data, problem }) => {
         if (data) {
           this.snamiHRList = data;
-          requestSnamiStaffList({ isMentor: true }).then(({ data, problem }) => {
+          requestSnamiStaffList({}).then(({ data, problem }) => {
             if (data) {
               this.snamiMentorsList = data;
               resolve();

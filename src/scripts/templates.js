@@ -40,20 +40,20 @@ const getAuthForm = ({
       <h1>Вход</h1>
       <h3>Для адаптации сотрудников необходимо войти в приложения Potok и Snami</h3>
       ${
-        companyExist
-          ? `<h2>Вы успешно авторизованы в ${companyExist} <span class="check-icon blue"></span></h2>`
-          : ''
-      }
+  companyExist
+    ? `<h2>Вы успешно авторизованы в ${companyExist} <span class="check-icon blue"></span></h2>`
+    : ''
+}
       <h2>Выполните вход в ${companyName}${
-    snamiServerType
-      ? `&nbsp;&nbsp;&nbsp;<span class="text-red">[${
-          snamiServerType === 1 ? 'STAGE' : 'RC'
-        }]</span>`
-      : ''
-  }</h2>
+  snamiServerType
+    ? `&nbsp;&nbsp;&nbsp;<span class="text-red">[${
+      snamiServerType === 1 ? 'STAGE' : 'RC'
+    }]</span>`
+    : ''
+}</h2>
     ${
-      formName === form_authSnami && login && password && snamiTwoFactorAuth
-        ? `
+  formName === form_authSnami && login && password && snamiTwoFactorAuth
+    ? `
         <section class="info small">
           <img class="info-image" src="./images/info.svg" alt=""/>
           <div class="info-text">Администратор вашей компании включил двухфакторную авторизацию</div>
@@ -65,7 +65,7 @@ const getAuthForm = ({
           </div>
         </section>
         `
-        : `
+    : `
         <form name="${formName}">
           <div class="form-item">
             <label class="form-label" htmlFor="${form_authLogin}">Логин</label>
@@ -83,7 +83,7 @@ const getAuthForm = ({
           </div>
         </form>
       `
-    }
+}
     </section>
   `;
 };
@@ -94,25 +94,23 @@ const template_authSnami = ({
   otherCompanyExist,
   snamiServerType,
   snamiTwoFactorAuth,
-}) =>
-  getAuthForm({
-    login: login ? login : '',
-    password: password ? password : '',
-    formName: form_authSnami,
-    companyName: 'Snami',
-    companyExist: otherCompanyExist ? 'Potok' : null,
-    snamiServerType: snamiServerType || 0,
-    snamiTwoFactorAuth: snamiTwoFactorAuth || false,
-  });
+}) => getAuthForm({
+  login: login ? login : '',
+  password: password ? password : '',
+  formName: form_authSnami,
+  companyName: 'Snami',
+  companyExist: otherCompanyExist ? 'Potok' : null,
+  snamiServerType: snamiServerType || 0,
+  snamiTwoFactorAuth: snamiTwoFactorAuth || false,
+});
 
-const template_authPotok = ({ login, password, otherCompanyExist }) =>
-  getAuthForm({
-    login: login ? login : '',
-    password: password ? password : '',
-    formName: form_authPotok,
-    companyName: 'Potok',
-    companyExist: otherCompanyExist ? 'Snami' : null,
-  });
+const template_authPotok = ({ login, password, otherCompanyExist }) => getAuthForm({
+  login: login ? login : '',
+  password: password ? password : '',
+  formName: form_authPotok,
+  companyName: 'Potok',
+  companyExist: otherCompanyExist ? 'Snami' : null,
+});
 
 const getCustomerBox = ({ avatar, name, email, logoutId }) => {
   return `
@@ -140,34 +138,34 @@ const template_header = ({
     return `
     <header>
       ${
-        potokName && potokEmail
-          ? getCustomerBox({
-              avatar: './images/avatar_potok.svg',
-              name: potokName,
-              email: potokEmail,
-              logoutId: id_logoutPotok,
-            })
-          : ''
-      }
+  potokName && potokEmail
+    ? getCustomerBox({
+      avatar: './images/avatar_potok.svg',
+      name: potokName,
+      email: potokEmail,
+      logoutId: id_logoutPotok,
+    })
+    : ''
+}
       ${
-        snamiName && snamiEmail && potokName && potokEmail
-          ? '<div class="customers-separator"></div>'
-          : ''
-      }
+  snamiName && snamiEmail && potokName && potokEmail
+    ? '<div class="customers-separator"></div>'
+    : ''
+}
       ${
-        snamiName && snamiEmail
-          ? getCustomerBox({
-              avatar: snamiServerType
-                ? snamiServerType === 1
-                  ? './images/avatar_snami_stage.svg'
-                  : './images/avatar_snami_rc.svg'
-                : './images/avatar_snami.svg',
-              name: snamiName,
-              email: snamiEmail,
-              logoutId: id_logoutSnami,
-            })
-          : ''
-      }
+  snamiName && snamiEmail
+    ? getCustomerBox({
+      avatar: snamiServerType
+        ? snamiServerType === 1
+          ? './images/avatar_snami_stage.svg'
+          : './images/avatar_snami_rc.svg'
+        : './images/avatar_snami.svg',
+      name: snamiName,
+      email: snamiEmail,
+      logoutId: id_logoutSnami,
+    })
+    : ''
+}
     </header>
   `;
   } else {
@@ -200,10 +198,10 @@ const template_candidateForm = ({
   return `
     <section class="candidate">
       <h1>${
-        editMode
-          ? 'Сотрудник уже проходит адаптацию <span class="check-icon green"></span>'
-          : 'Приглашение на адаптацию в Snami для сотрудника'
-      }</h1>
+  editMode
+    ? 'Сотрудник уже проходит адаптацию <span class="check-icon green"></span>'
+    : 'Приглашение на адаптацию в Snami для сотрудника'
+}</h1>
       ${editMode ? '<h3>Вы можете редактировать данные профиля сотрудника</h3>' : ''}
       <form name="${form_candidate}">
         <div class="form-row">
@@ -234,11 +232,11 @@ const template_candidateForm = ({
             <label class="form-label required" htmlFor="phone">Пол</label>
             <div class="form-radios">
               <label><input name="${form_inputSex}" type="radio" value="0" ${
-    sex === true ? 'checked' : ''
-  }><span class="checkmark"></span> Мужской</label>
+  sex === true ? 'checked' : ''
+}><span class="checkmark"></span> Мужской</label>
               <label><input name="${form_inputSex}" type="radio" value="1"  ${
-    sex === false ? 'checked' : ''
-  }><span class="checkmark"></span> Женский</label>
+  sex === false ? 'checked' : ''
+}><span class="checkmark"></span> Женский</label>
             </div>
             <div id="${form_inputSex}_error"></div>
           </div>
@@ -262,13 +260,12 @@ const template_candidateForm = ({
             <select name="${form_selectLocationId}" id="${form_selectLocationId}">
               <option value="">Выберите локацию</option>
               ${locations
-                .map(
-                  ({ id, name }) =>
-                    `<option value="${id}" ${
-                      +locationId === +id ? 'selected' : ''
-                    }>${name}</option>`,
-                )
-                .join()}
+    .map(
+      ({ id, name }) => `<option value="${id}" ${
+        +locationId === +id ? 'selected' : ''
+      }>${name}</option>`
+    )
+    .join()}
             </select>
             <div id="${form_selectLocationId}_error"></div>
           </div>
@@ -281,31 +278,17 @@ const template_candidateForm = ({
         <div class="form-row">
           <div class="form-item">
             <label class="form-label required" htmlFor="${form_selectHrId}">HR</label>
-            <select name="${form_selectHrId}" id="${form_selectHrId}">
-              <option value="">Выберите HR</option>
-              ${HRsList.map(
-                ({ id, last_name, first_name, middle_name }) =>
-                  `<option value="${id}" ${
-                    +hrId === +id ? 'selected' : ''
-                  }>${last_name} ${first_name} ${middle_name}</option>`,
-              ).join()}
-            </select>
+            <div class="awesomplete">
+                <input name="${form_selectHrId}" id="${form_selectHrId}" type="text" autocomplete="off"/>
+            </div>
             <div id="${form_selectHrId}_error"></div>
           </div>
           <div class="form-item-separator"></div>
           <div class="form-item">
-            <label class="form-label required" htmlFor="${form_selectMentorId}">Наставник</label>
-            <select name="${form_selectMentorId}" id="${form_selectMentorId}">
-              <option value="">Выберите наставника</option>
-              ${mentorsList
-                .map(
-                  ({ id, last_name, first_name, middle_name }) =>
-                    `<option value="${id}" ${
-                      +mentorId === +id ? 'selected' : ''
-                    }>${last_name} ${first_name} ${middle_name}</option>`,
-                )
-                .join()}
-            </select>
+            <label class="form-label required" htmlFor="${form_selectMentorId}">Руководитель</label>
+            <div class="awesomplete">
+                <input name="${form_selectMentorId}" id="${form_selectMentorId}" type="text" autocomplete="off"/>
+            </div>
             <div id="${form_selectMentorId}_error"></div>
           </div>
         </div>

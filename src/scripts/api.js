@@ -462,7 +462,7 @@ const requestSnamiStaffList = ({ isHR = false, isMentor = false }) => {
           is_hr: isHR ? 'true' : 'none',
           is_mentor: isMentor ? 'true' : 'none',
         },
-        page_size: 300,
+        page_size: 10000,
       })
       .then(response => {
         const { ok, data, problem } = response;

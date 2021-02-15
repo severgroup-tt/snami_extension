@@ -40,7 +40,7 @@ module.exports = {
     'import/namespace': 'error',
     'import/no-duplicates': 'error',
     'no-unused-vars': [
-      'warn',
+      'off',
       {
         vars: 'all',
         args: 'none',

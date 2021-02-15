@@ -1,6 +1,7 @@
 /.git
 /.vscode
 /node_modules
+/src/scripts/libs
 /ios
 /android
 /fastlane
