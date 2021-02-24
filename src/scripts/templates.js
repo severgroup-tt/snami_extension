@@ -18,6 +18,7 @@ const form_inputEmail = 'input_email';
 const form_selectLocationId = 'input_locationId';
 const form_selectHrId = 'select_hrId';
 const form_selectMentorId = 'select_mentorId';
+const form_selectTutorId = 'select_tutorId';
 const form_inputPosition = 'input_position';
 const form_inputSalary = 'input_salary';
 const form_inputVacation = 'input_vacation';
@@ -290,6 +291,14 @@ const template_candidateForm = ({
                 <input name="${form_selectMentorId}" id="${form_selectMentorId}" type="text" autocomplete="off"/>
             </div>
             <div id="${form_selectMentorId}_error"></div>
+          </div>
+          <div class="form-item-separator"></div>
+          <div class="form-item">
+            <label class="form-label required" htmlFor="${form_selectTutorId}">Наставник</label>
+            <div class="awesomplete">
+                <input name="${form_selectTutorId}" id="${form_selectTutorId}" type="text" autocomplete="off"/>
+            </div>
+            <div id="${form_selectTutorId}_error"></div>
           </div>
         </div>
 
