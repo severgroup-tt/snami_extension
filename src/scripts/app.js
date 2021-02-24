@@ -47,8 +47,10 @@ class App {
     this.snamiLocationsList = [];
     this.snamiHRList = [];
     this.snamiMentorsList = [];
+    this.snamiTutorsList = [];
     this.mentorAutocomplete = null;
     this.hrAutocomplete = null;
+    this.tutorAutocomplete = null;
     this.mainInfo = '';
     this.maskPhone = null;
     this.birthdsayDatepicker = null;
@@ -124,11 +126,15 @@ class App {
           locations: this.snamiLocationsList,
           HRsList: this.snamiHRList,
           mentorsList: this.snamiMentorsList,
+          tutorsList: this.snamiTutorsList,
         });
+        const tutorElement = document.getElementById(form_selectTutorId);
         const mentorElement = document.getElementById(form_selectMentorId);
         const hrElement = document.getElementById(form_selectHrId);
 
         if (this.applicant.locationId) {
+          tutorElement.removeAttribute('disabled');
+          tutorElement.setAttribute('placeholder', 'Выберите наставника');
           mentorElement.removeAttribute('disabled');
           mentorElement.setAttribute('placeholder', 'Выберите руководителя');
           hrElement.removeAttribute('disabled');
@@ -145,7 +151,15 @@ class App {
               mentorElement.value = `${mentor.last_name} ${mentor.first_name} ${mentor.middle_name}`;
             }
           }
+          if (this.applicant.tutorId) {
+            const tutor = this.snamiTutorsList.find(item => item.id === this.applicant.tutorId);
+            if (tutor) {
+              tutorElement.value = `${tutor.last_name} ${tutor.first_name} ${tutor.middle_name}`;
+            }
+          }
         } else {
+          tutorElement.setAttribute('disabled', 'disabled');
+          tutorElement.setAttribute('placeholder', 'Сначала выберите локацию');
           mentorElement.setAttribute('disabled', 'disabled');
           mentorElement.setAttribute('placeholder', 'Сначала выберите локацию');
           hrElement.setAttribute('disabled', 'disabled');
@@ -177,6 +191,21 @@ class App {
             // insert label instead of value into the input.
             replace: function(suggestion) {
               applicant.hrId = suggestion.value;
+              this.input.value = suggestion.label;
+            },
+          });
+        }
+        if (this.snamiTutorsList.length) {
+          const applicant = this.applicant;
+          this.tutorAutocomplete = new Awesomplete(tutorElement, {
+            minChars: 1,
+            list: this.snamiTutorsList.map(item => ({
+              value: item.id,
+              label: `${item.last_name} ${item.first_name} ${item.middle_name}`,
+            })),
+            // insert label instead of value into the input.
+            replace: function(suggestion) {
+              applicant.tutorId = suggestion.value;
               this.input.value = suggestion.label;
             },
           });
@@ -434,6 +463,12 @@ class App {
             this._validatorNoEmpty
           );
           errors += this._validateFormItem(
+            this.applicant.tutorId,
+            form_selectTutorId,
+            'Обязательное поле',
+            this._validatorNoEmpty
+          );
+          errors += this._validateFormItem(
             this.applicant.startedDate,
             form_inputStartedDate,
             'Формат ДД.MM.ГГГГ или пустое',
@@ -466,6 +501,7 @@ class App {
                       locationId: +this.applicant.locationId,
                       hrId: +this.applicant.hrId,
                       mentorId: +this.applicant.mentorId,
+                      tutorId: +this.applicant.tutorId,
                       salary: +this.applicant.salary,
                       phone,
                       birthday: this.birthdsayDatepicker.getDate('yyyy-mm-dd') || '',
@@ -487,6 +523,7 @@ class App {
                       locationId: +this.applicant.locationId,
                       hrId: +this.applicant.hrId,
                       mentorId: +this.applicant.mentorId,
+                      tutorId: +this.applicant.tutorId,
                       salary: +this.applicant.salary,
                       phone,
                       birthday: this.birthdsayDatepicker.getDate('yyyy-mm-dd') || '',
@@ -628,6 +665,15 @@ class App {
           this.applicant.mentorId = '';
         }
         break;
+      case form_selectTutorId:
+        if (type === 'blur') {
+          if (!this.applicant.tutorId) {
+            target.value = '';
+          }
+        } else {
+          this.applicant.tutorId = '';
+        }
+        break;
       case form_inputPosition:
         this.applicant.position = value;
         break;
@@ -675,6 +721,9 @@ class App {
         target.value = '';
       }
       if (target.id === form_selectMentorId && !this.applicant.mentorId) {
+        target.value = '';
+      }
+      if (target.id === form_selectTutorId && !this.applicant.tutorId) {
         target.value = '';
       }
     }
@@ -788,8 +837,10 @@ class App {
             this.applicant.locationId = value;
             this.applicant.hrId = '';
             this.applicant.mentorId = '';
+            this.applicant.tutorId = '';
             this.snamiHRList = [];
             this.snamiMentorsList = [];
+            this.snamiTutorsList = [];
             if (value) {
               this._showLoader();
               this._getStaffList(value)
@@ -892,7 +943,7 @@ class App {
 
   _getPotokCustomerInfo = () => {
     return new Promise((resolve, reject) => {
-      requestPotokCustomerInfo().then(({ data, problem }) => {
+      requestPotokCustomerInfo().then(({ data, problem, status }) => {
         if (data) {
           this.potokCustomerName = data.name || '';
           this.potokCustomerEmail = data.email || '';
@@ -982,6 +1033,7 @@ class App {
                 locationId: '',
                 hrId: '',
                 mentorId: '',
+                tutorId: '',
                 position: '',
                 salary: '',
                 vacation: '',
@@ -1006,6 +1058,7 @@ class App {
                       location_id: locationId = 0,
                       hr_id: hrId = 0,
                       mentor_id: mentorId = 0,
+                      tutor_id: tutorId = 0,
                       position = '',
                       meta: { salary = '', vacation_days: vacation = 0, conditions = '' } = {},
                       editMode,
@@ -1030,6 +1083,7 @@ class App {
                       locationId,
                       hrId,
                       mentorId,
+                      tutorId,
                       position,
                       salary,
                       vacation,
@@ -1119,14 +1173,9 @@ class App {
       requestSnamiStaffList({}).then(({ data, problem }) => {
         if (data) {
           this.snamiHRList = data;
-          requestSnamiStaffList({}).then(({ data, problem }) => {
-            if (data) {
-              this.snamiMentorsList = data;
-              resolve();
-            } else {
-              reject(problem);
-            }
-          });
+          this.snamiMentorsList = data;
+          this.snamiTutorsList = data;
+          resolve();
         } else {
           reject(problem);
         }
