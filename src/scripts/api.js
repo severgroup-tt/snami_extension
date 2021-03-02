@@ -365,6 +365,7 @@ const requestSnamiCreateCandidate = (
     locationId = 0,
     hrId = 0,
     mentorId = 0,
+    tutorId = 0,
     position = '',
     salary = 0,
     vacation = '',
@@ -384,6 +385,7 @@ const requestSnamiCreateCandidate = (
     is_candidate: true,
     location_id: locationId,
     mentor_id: mentorId,
+    tutor_id: tutorId,
     meta: {
       salary,
       vacation_days: vacation,
@@ -407,6 +409,7 @@ const requestSnamiCreateCandidate = (
       'last_name',
       'location_id',
       'mentor_id',
+      'tutor_id',
       'meta',
       'middle_name',
       'phone',

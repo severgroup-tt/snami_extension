@@ -463,12 +463,6 @@ class App {
             this._validatorNoEmpty
           );
           errors += this._validateFormItem(
-            this.applicant.tutorId,
-            form_selectTutorId,
-            'Обязательное поле',
-            this._validatorNoEmpty
-          );
-          errors += this._validateFormItem(
             this.applicant.startedDate,
             form_inputStartedDate,
             'Формат ДД.MM.ГГГГ или пустое',
