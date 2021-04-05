@@ -961,6 +961,11 @@ class App {
         const { url } = tab[0];
         let jobId = '';
         let applicantId = '';
+        // https://app.potok.io/applicants/6755512/
+        // https://app.potok.io/jobs/189190/6167883
+        // https://app.potok.io/jobs/189190/stage/1515235/6167883
+        // https://app.potok.io/jobs/189190/stage/all/?applicantId=6167883
+        // https://app.potok.io/j/189190/all/a/6750265/
         if (/app.potok.io\/applicants\/\d+/.test(url)) {
           const ids = url.match(/\d+/g);
           applicantId = ids[0];
