@@ -12,5 +12,3 @@ const FRONT_URL_SNAMI = {
 
 const storageSync = chrome.storage.sync;
 const storageLocal = chrome.storage.local;
-// storageSync.clear();
-// storageLocal.clear();

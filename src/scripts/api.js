@@ -38,22 +38,8 @@ class Api {
       })
         .then(async response => {
           const { ok, status } = response;
-          // console.log(
-          //   `${method}: ${this.baseUrl}${url}${uriSuffix ? `/${uriSuffix}` : ''}\n`,
-          //   ` response:`,
-          //   response,
-          // );
-
           if (ok) {
             const data = await response.json();
-            // console.log(
-            //   `${method}: ${this.baseUrl}${url}${uriSuffix ? `/${uriSuffix}` : ''}\n`,
-            //   body,
-            //   ` resultData:`,
-            //   data,
-            //   ` status:`,
-            //   status,
-            // );
             if (retry && onRetryResolve) {
               onRetryResolve({ ok, data, headers: response.headers, status });
             } else {
@@ -76,14 +62,6 @@ class Api {
               } catch (error) {
                 problem = error;
               }
-              // console.log(
-              //   `${method}: ${this.baseUrl}${url}${uriSuffix ? `/${uriSuffix}` : ''}\n`,
-              //   body,
-              //   ` problem:`,
-              //   problem,
-              //   ` status:`,
-              //   status
-              // );
               let snamiError = problem && problem.error && problem.error.message;
               try {
                 if (
@@ -217,14 +195,14 @@ const requestPotokLogin = (email, password) => {
     apiPotok.post('auth/sign_in.json', { email, password }).then(response => {
       const { ok, headers, problem } = response;
       if (ok && headers && headers.get('access-token')) {
-        const aurhHeaders = {
+        const authHeaders = {
           'access-token': headers.get('access-token'),
           client: headers.get('client'),
           uid: headers.get('uid'),
           'token-type': headers.get('token-type'),
           expiry: headers.get('expiry'),
         };
-        resolve({ ...response, data: aurhHeaders });
+        resolve({ ...response, data: authHeaders });
       } else {
         resolve({
           ...response,

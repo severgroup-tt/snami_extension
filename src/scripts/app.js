@@ -262,9 +262,9 @@ class App {
   };
 
   _initApp = () => {
-    storageSync.get(
-      ['snamiHeaders', 'potokHeaders', 'snamiServerType'],
-      ({ snamiHeaders = null, potokHeaders = null, snamiServerType = 0 }) => {
+    storageSync.get(['snamiHeaders', 'potokHeaders', 'snamiServerType'],
+      (response = {}) => {
+        const {snamiHeaders = null, potokHeaders = null, snamiServerType = 0} = response;
         this.snamiHeaders = snamiHeaders;
         this.snamiServerType = snamiServerType;
         this.potokHeaders = potokHeaders;
@@ -957,15 +957,10 @@ class App {
 
   _getApplicantContent = () => {
     return new Promise((resolve, reject) => {
-      chrome.tabs.getSelected(null, tab => {
-        const { url } = tab;
+      chrome.tabs.query({active: true, windowId: chrome.windows.WINDOW_ID_CURRENT}, tab => {
+        const { url } = tab[0];
         let jobId = '';
         let applicantId = '';
-        // https://app.potok.io/applicants/6755512/
-        // https://app.potok.io/jobs/189190/6167883
-        // https://app.potok.io/jobs/189190/stage/1515235/6167883
-        // https://app.potok.io/jobs/189190/stage/all/?applicantId=6167883
-        // https://app.potok.io/j/189190/all/a/6750265/
         if (/app.potok.io\/applicants\/\d+/.test(url)) {
           const ids = url.match(/\d+/g);
           applicantId = ids[0];
