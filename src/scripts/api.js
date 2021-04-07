@@ -389,7 +389,6 @@ const requestSnamiCreateCandidate = (
   return new Promise(resolve => {
     apiSnami.post(`customer/staff/${createNew ? 'create' : 'update'}`, request).then(response => {
       const { ok, data, problem, status } = response;
-      console.log(1111111, { ok, data, problem, status });
       if (ok) {
         resolve({ ...response });
       } else {
