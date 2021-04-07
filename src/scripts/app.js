@@ -262,9 +262,9 @@ class App {
   };
 
   _initApp = () => {
-    storageSync.get(
-      ['snamiHeaders', 'potokHeaders', 'snamiServerType'],
-      ({ snamiHeaders = null, potokHeaders = null, snamiServerType = 0 }) => {
+    storageSync.get(['snamiHeaders', 'potokHeaders', 'snamiServerType'],
+      (response = {}) => {
+        const {snamiHeaders = null, potokHeaders = null, snamiServerType = 0} = response;
         this.snamiHeaders = snamiHeaders;
         this.snamiServerType = snamiServerType;
         this.potokHeaders = potokHeaders;
@@ -496,7 +496,7 @@ class App {
                       hrId: +this.applicant.hrId,
                       mentorId: +this.applicant.mentorId,
                       tutorId: +this.applicant.tutorId,
-                      salary: +this.applicant.salary,
+                      salary: +this.applicant.salary.replace(/\s/g, ''),
                       phone,
                       birthday: this.birthdsayDatepicker.getDate('yyyy-mm-dd') || '',
                       startedDate: this.startedDatepicker.getDate('yyyy-mm-dd') || '',
@@ -518,7 +518,7 @@ class App {
                       hrId: +this.applicant.hrId,
                       mentorId: +this.applicant.mentorId,
                       tutorId: +this.applicant.tutorId,
-                      salary: +this.applicant.salary,
+                      salary: +this.applicant.salary.replace(/\s/g, ''),
                       phone,
                       birthday: this.birthdsayDatepicker.getDate('yyyy-mm-dd') || '',
                       startedDate: this.startedDatepicker.getDate('yyyy-mm-dd') || '',
@@ -550,7 +550,11 @@ class App {
   };
 
   _onClickElement = event => {
-    const { target: { id: targetId, parentElement: { id: parentId } = {} } = {} } = event;
+    // const { target: { id: targetId, parentElement: { id: parentId } = {} } = {} } = event;
+    const { target = {} } = event;
+    const targetId = target.id;
+    const { parentElement = {} } = target;
+    const parentId = parentElement.id;
     if (targetId === id_logoutSnami || parentId === id_logoutSnami) {
       this._logOutSnami().then(() => {
         storageLocal.set({ authLogin: '', authPassword: '' }, () => {
@@ -646,8 +650,15 @@ class App {
           if (!this.applicant.hrId) {
             target.value = '';
           }
+          this._validateFormItem(
+            this.applicant.hrId,
+            form_selectHrId,
+            'Обязательное поле',
+            this._validatorNoEmpty
+          );
         } else {
           this.applicant.hrId = '';
+          this._hideFormItemError(form_selectHrId);
         }
         break;
       case form_selectMentorId:
@@ -655,8 +666,15 @@ class App {
           if (!this.applicant.mentorId) {
             target.value = '';
           }
+          this._validateFormItem(
+            this.applicant.mentorId,
+            form_selectMentorId,
+            'Обязательное поле',
+            this._validatorNoEmpty
+          );
         } else {
           this.applicant.mentorId = '';
+          this._hideFormItemError(form_selectMentorId);
         }
         break;
       case form_selectTutorId:
@@ -867,6 +885,7 @@ class App {
         break;
       case form_inputSex:
         this.applicant.sex = !!value;
+        this._hideFormItemError(form_inputSex);
         break;
       case form_authLogin:
         storageLocal.set({ authLogin: value }, () => {});
@@ -957,8 +976,8 @@ class App {
 
   _getApplicantContent = () => {
     return new Promise((resolve, reject) => {
-      chrome.tabs.getSelected(null, tab => {
-        const { url } = tab;
+      chrome.tabs.query({active: true, windowId: chrome.windows.WINDOW_ID_CURRENT}, tab => {
+        const { url } = tab[0];
         let jobId = '';
         let applicantId = '';
         // https://app.potok.io/applicants/6755512/
