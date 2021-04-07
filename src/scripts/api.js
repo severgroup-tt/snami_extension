@@ -63,18 +63,7 @@ class Api {
                 problem = error;
               }
               let snamiError = problem && problem.error && problem.error.message;
-              try {
-                if (
-                  problem &&
-                  problem.error &&
-                  problem.error.data &&
-                  Array.isArray(problem.error.data)
-                ) {
-                  snamiError = `${snamiError} ${problem.error.data
-                    .map(({ key, value }) => (key && value ? `${key}: ${value}` : ''))
-                    .join(', ')}`;
-                }
-              } catch {}
+
               const potokErrors =
                 problem && problem.errors && Object.values(problem.errors).join(', ');
               if (retry && onRetryResolve) {
@@ -400,6 +389,7 @@ const requestSnamiCreateCandidate = (
   return new Promise(resolve => {
     apiSnami.post(`customer/staff/${createNew ? 'create' : 'update'}`, request).then(response => {
       const { ok, data, problem, status } = response;
+      console.log(1111111, { ok, data, problem, status });
       if (ok) {
         resolve({ ...response });
       } else {

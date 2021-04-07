@@ -232,12 +232,10 @@ const template_candidateForm = ({
           <div class="form-item">
             <label class="form-label required" htmlFor="phone">Пол</label>
             <div class="form-radios">
-              <label><input name="${form_inputSex}" type="radio" value="0" ${
-  sex === true ? 'checked' : ''
-}><span class="checkmark"></span> Мужской</label>
-              <label><input name="${form_inputSex}" type="radio" value="1"  ${
-  sex === false ? 'checked' : ''
-}><span class="checkmark"></span> Женский</label>
+              <label><input name="${form_inputSex}" type="radio" value="0" ${sex === true ? 'checked' : ''}>
+              <span class="checkmark"></span> Мужской</label>
+              <label><input name="${form_inputSex}" type="radio" value="1"  ${sex === false ? 'checked' : ''}>
+              <span class="checkmark"></span> Женский</label>
             </div>
             <div id="${form_inputSex}_error"></div>
           </div>
